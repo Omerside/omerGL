@@ -1,0 +1,21 @@
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(377,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+  main.cpp
+main.obj : error LNK2019: unresolved external symbol glewInit referenced in function main
+main.obj : error LNK2019: unresolved external symbol glfwInit referenced in function main
+main.obj : error LNK2019: unresolved external symbol glfwTerminate referenced in function main
+main.obj : error LNK2019: unresolved external symbol glfwGetPrimaryMonitor referenced in function main
+main.obj : error LNK2019: unresolved external symbol glfwGetVideoMode referenced in function main
+main.obj : error LNK2019: unresolved external symbol glfwWindowHint referenced in function main
+main.obj : error LNK2019: unresolved external symbol glfwCreateWindow referenced in function main
+main.obj : error LNK2019: unresolved external symbol glfwWindowShouldClose referenced in function main
+main.obj : error LNK2019: unresolved external symbol glfwSetWindowShouldClose referenced in function "void __cdecl glfw_onKey(struct GLFWwindow *,int,int,int,int)" (?glfw_onKey@@YAXPEAUGLFWwindow@@HHHH@Z)
+main.obj : error LNK2019: unresolved external symbol glfwSetWindowTitle referenced in function "void __cdecl showFPS(struct GLFWwindow *)" (?showFPS@@YAXPEAUGLFWwindow@@@Z)
+main.obj : error LNK2019: unresolved external symbol glfwPollEvents referenced in function main
+main.obj : error LNK2019: unresolved external symbol glfwSetKeyCallback referenced in function main
+main.obj : error LNK2019: unresolved external symbol glfwGetTime referenced in function "void __cdecl showFPS(struct GLFWwindow *)" (?showFPS@@YAXPEAUGLFWwindow@@@Z)
+main.obj : error LNK2019: unresolved external symbol glfwMakeContextCurrent referenced in function main
+main.obj : error LNK2019: unresolved external symbol glfwSwapBuffers referenced in function main
+main.obj : error LNK2001: unresolved external symbol glewExperimental
+.\common\lib\glfw3.lib : warning LNK4272: library machine type 'x86' conflicts with target machine type 'x64'
+.\common\lib\glew32s.lib : warning LNK4272: library machine type 'x86' conflicts with target machine type 'x64'
+.\bin\omerGL.exe : fatal error LNK1120: 16 unresolved externals
