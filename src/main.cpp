@@ -9,21 +9,26 @@ const char* APP_TITLE = "OmerGL";
 const int gWindowWidth = 800;
 const int gWindowHeight = 600;
 GLFWwindow* gWindow = NULL;
+bool gWireframe = false;
 
 const GLchar* vertexShaderSrc =
 "#version 330 core\n"
 "layout (location = 0) in vec3 pos;"
+"layout (location = 1) in vec3 color;"
+"out vec3 vert_color;"
 "void main()"
 "{"
-"gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);" 
+"	vert_color = color;"
+"	gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);" 
 "}";
 
 const GLchar* fragmentShaderSrc =
 "#version 330 core\n"
+"in vec3 vert_color;"
 "out vec4 frag_color;"
 "void main()"
 "{"
-"	frag_color = vec4(0.35f, 0.96f, 0.3f, 1.0f);"
+"	frag_color = vec4(vert_color, 1.0f);"
 "}";
 
 
@@ -42,15 +47,26 @@ int main() {
 		Different OS's assign different mem values for native types.
 		Using GLfloat guarantees the conditions necessary for our program to have proper memory allocated.
 	*/
-	GLfloat vertices[] = {
-		//This is our triangle.
-		0.5f, 0.5f, 0.0f, // top vertex
-		0.5f, -0.5f, 0.0f,// right vertex
-		-0.5f, -0.5f, 0.0f // left vertex
+	GLfloat vert_pos[] = {
+		//This is our triangle's vertices position values
+		-0.5f, 0.5f, 0.0f, // top position
+		0.5f, 0.5f, 0.0f,// right position
+		0.5f, -0.5f, 0.0f // left position
+
 	};
 
-	//Vertex-buffer object
+	GLfloat vert_color[] = {
+		//This is our triangle color values (RGB)
+		1.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f
+	};
+
+	//Vertex-buffer object - position
 	GLuint vbo;
+
+	//Vertex-buffer object - color
+	GLuint vbo2;
 
 	//Vertex-array object
 	GLuint vao;
@@ -59,20 +75,29 @@ int main() {
 	glGenBuffers(1, &vbo);
 
 	//This makes our defined Vertex-buffer the current buffer. You can only have 1 active.
-	//Why GL_ARRAY_BUFFER? Because vertices[] is an array.
+	//Why GL_ARRAY_BUFFER? Because vert_pos is an array.
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
 	//Give your buffer information on what you're about to use it for.
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vert_pos), vert_pos, GL_STATIC_DRAW);
+
+	//create buffer for color array
+	glGenBuffers(1, &vbo2);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo2);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vert_color), vert_color, GL_STATIC_DRAW);
 
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
-	// define an array of generic vertex attribute data
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	// define an array of generic vertex POSITION data
 
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(0);
 
+
+	// define an array of generic vertex COLOR data. 
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glEnableVertexAttribArray(1);
 
 	//Below we create our fragment and vertex shaders using the text defined at the top.
 	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
@@ -176,6 +201,17 @@ bool initOpenGL() {
 void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode) {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GL_TRUE);
+	}
+
+
+	//Add wireframe mode on `W` key
+	if (key == GLFW_KEY_W && action == GLFW_PRESS)
+	{
+		gWireframe = !gWireframe;
+		if (gWireframe)
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		else
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 }
 
