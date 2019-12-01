@@ -4,33 +4,13 @@
 #define GLEW_STATIC
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
+#include "ShaderProgram.h"
 
 const char* APP_TITLE = "OmerGL";
 const int gWindowWidth = 800;
 const int gWindowHeight = 600;
 GLFWwindow* gWindow = NULL;
 bool gWireframe = false;
-
-const GLchar* vertexShaderSrc =
-"#version 330 core\n"
-"layout (location = 0) in vec3 pos;"
-"layout (location = 1) in vec3 color;"
-"out vec3 vert_color;"
-"void main()"
-"{"
-"	vert_color = color;"
-"	gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);" 
-"}";
-
-const GLchar* fragmentShaderSrc =
-"#version 330 core\n"
-"in vec3 vert_color;"
-"out vec4 frag_color;"
-"void main()"
-"{"
-"	frag_color = vec4(vert_color, 1.0f);"
-"}";
-
 
 void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode);
 void showFPS(GLFWwindow * window);
@@ -41,101 +21,41 @@ int main() {
 		std::cerr << "GLFW init error - aborting" << std::endl;
 		return -1;
 	}
-
-	/*\
-		Why use GLfloat instead of float?
-		Different OS's assign different mem values for native types.
-		Using GLfloat guarantees the conditions necessary for our program to have proper memory allocated.
-	*/
-	GLfloat vert_pos[] = {
-		//This is our triangle's vertices position values
-		-0.5f, 0.5f, 0.0f, // top position
-		0.5f, 0.5f, 0.0f,// right position
-		0.5f, -0.5f, 0.0f // left position
-
+	GLfloat vertices[] = {
+		-0.5f,  0.5f, 0.0f,		// Top left
+		 0.5f,  0.5f, 0.0f,		// Top right
+		 0.5f, -0.5f, 0.0f,		// Bottom right
+		-0.5f, -0.5f, 0.0f		// Bottom left 
 	};
 
-	GLfloat vert_color[] = {
-		//This is our triangle color values (RGB)
-		1.0f, 0.0f, 0.0f,
-		0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 1.0f
+	GLuint indices[] = {
+		0, 1, 2,  // First Triangle
+		0, 2, 3   // Second Triangle
 	};
 
-	//Vertex-buffer object - position
-	GLuint vbo;
+	// 2. Set up buffers on the GPU
+	GLuint vbo, ibo, vao;
 
-	//Vertex-buffer object - color
-	GLuint vbo2;
+	glGenBuffers(1, &vbo);					// Generate an empty vertex buffer on the GPU
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);		// "bind" or set as the current buffer we are working with
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);	// copy the data from CPU to GPU
 
-	//Vertex-array object
-	GLuint vao;
+	glGenVertexArrays(1, &vao);				// Tell OpenGL to create new Vertex Array Object
+	glBindVertexArray(vao);					// Make it the current one
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);	// Define a layout for the first vertex buffer "0"
+	glEnableVertexAttribArray(0);			// Enable the first attribute or attribute "0"
 
-	//Create a buffer to allow memory to be stored in GPU, skip the bus!
-	glGenBuffers(1, &vbo);
+	// Set up index buffer
+	glGenBuffers(1, &ibo);	// Create buffer space on the GPU for the index buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	//This makes our defined Vertex-buffer the current buffer. You can only have 1 active.
-	//Why GL_ARRAY_BUFFER? Because vert_pos is an array.
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-	//Give your buffer information on what you're about to use it for.
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vert_pos), vert_pos, GL_STATIC_DRAW);
-
-	//create buffer for color array
-	glGenBuffers(1, &vbo2);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo2);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vert_color), vert_color, GL_STATIC_DRAW);
-
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	// define an array of generic vertex POSITION data
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(0);
+	glBindVertexArray(0);					// unbind to make sure other code doesn't change it
 
 
-	// define an array of generic vertex COLOR data. 
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(1);
-
-	//Below we create our fragment and vertex shaders using the text defined at the top.
-	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vs, 1, &vertexShaderSrc, NULL);
-	glCompileShader(vs);
-	GLint result;
-	GLchar infoLog[512];
-	glGetShaderiv(vs, GL_COMPILE_STATUS, &result);
-	if (!result) {
-		glGetShaderInfoLog(vs, sizeof(infoLog), NULL, infoLog);
-		std::cout << "Error! vertex shader failed to compile. " << infoLog << std::endl;
-	}
-
-	GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fs, 1, &fragmentShaderSrc, NULL);
-	glCompileShader(fs);
-
-	glGetShaderiv(fs, GL_COMPILE_STATUS, &result);
-	if (!result) {
-		glGetShaderInfoLog(fs, sizeof(infoLog), NULL, infoLog);
-		std::cout << "Error! Fragment shader failed to compile. " << infoLog << std::endl;
-	}
-
-	//Create the program and attach the shaders we created to it
-	GLuint shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vs);
-	glAttachShader(shaderProgram, fs);
-	glLinkProgram(shaderProgram);
-
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &result);
-	if (!result) {
-		glGetProgramInfoLog(shaderProgram, sizeof(infoLog), NULL, infoLog);
-		std::cout << "Error! shader program failed to compile. " << infoLog << std::endl;
-	}
-	
-	//Delete the shaders after you linked them to the program. Good cleanup practice.
-	glDeleteShader(vs);
-	glDeleteShader(fs);
+	//creating shader
+	ShaderProgram shaderProgram;
+	shaderProgram.LoadShaders("basic.vert", "basic.frag");
 
 	//main loop
 	while (!glfwWindowShouldClose(gWindow)) {
@@ -143,24 +63,26 @@ int main() {
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT);
 
+
 		//Bind the vertex information we created
 		glBindVertexArray(vao);
 
 		//Use the "program", which is our two shaders (vertex and fragment)
-		glUseProgram(shaderProgram);
-
-		//Draw the triangle!
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-
-		//Unbind the vertex array, since we're done with it.
+		//glUseProgram(shaderProgram);
+		shaderProgram.Use();
+		glBindVertexArray(vao);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
+		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);
 	}
 
-	glDeleteProgram(shaderProgram);
+	// Clean up
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &ibo);
+
 	glfwTerminate();
 	return 0;
 }
