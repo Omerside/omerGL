@@ -1,18 +1,23 @@
 ﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(377,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
   main.cpp
+c:\users\omerz\source\repos\omergl\src\main.cpp(75): warning C4244: 'initializing': conversion from 'double' to 'GLfloat', possible loss of data
 LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
   Generating code
-  1 of 215 functions ( 0.5%) were compiled, the rest were copied from previous compilation.
+  1 of 355 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
+ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewUniform4f imported
 ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewLinkProgram imported
 ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewDeleteShader imported
+ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewUniform3f imported
 ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewGetProgramInfoLog imported
 ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewShaderSource imported
 ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewDeleteProgram imported
 ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewAttachShader imported
+ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewGetUniformLocation imported
 ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewGetProgramiv imported
+ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewUniform2f imported
 ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewGetShaderInfoLog imported
 ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewCreateProgram imported
 ShaderProgram.obj : warning LNK4049: locally defined symbol ___glewCreateShader imported

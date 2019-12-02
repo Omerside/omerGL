@@ -70,6 +70,18 @@ int main() {
 		//Use the "program", which is our two shaders (vertex and fragment)
 		//glUseProgram(shaderProgram);
 		shaderProgram.Use();
+
+		//Defining the vlue blueColor to change based on time using some fun math.
+		GLfloat time = glfwGetTime();
+		GLfloat blueColor = (sin(time) / 2) + 0.5f;
+
+		//Defining the position to vary and give our square a bounce.
+		glm::vec2 pos;
+		pos.x = sin(time*10) / 4;
+		pos.y = cos(time*20) / 2;
+
+		shaderProgram.SetUniform("posOffset", pos);
+		shaderProgram.SetUniform("vertColor", glm::vec4(0.0f, 0.0f, blueColor, 1.0f));
 		glBindVertexArray(vao);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);

@@ -111,3 +111,30 @@ void ShaderProgram::CheckCompileErrors(GLuint shader, ShaderType type) {
 
 	}
 }
+
+GLint ShaderProgram::GetUniformLocation(const GLchar* name) {
+
+	//Look for the location of the uniform
+	std::map<string, GLint>::iterator it = mUniformLocations.find(name);
+
+	//if you can't find it, add it to the map.
+	if (it == mUniformLocations.end()) {
+		mUniformLocations[name] = glGetUniformLocation(mHandle, name);
+	}
+
+	return mUniformLocations[name];
+}
+
+void ShaderProgram::SetUniform(const GLchar* name, const glm::vec2& v) {
+	GLint loc = GetUniformLocation(name);
+	glUniform2f(loc, v.x, v.y);
+}
+
+void ShaderProgram::SetUniform(const GLchar* name, const glm::vec3& v) {
+	GLint loc = GetUniformLocation(name);
+	glUniform3f(loc, v.x, v.y, v.z);
+}
+void ShaderProgram::SetUniform(const GLchar* name, const glm::vec4& v) {
+	GLint loc = GetUniformLocation(name);
+	glUniform4f(loc, v.x, v.y, v.z, v.x);
+}
