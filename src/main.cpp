@@ -13,6 +13,7 @@ const int gWindowHeight = 600;
 GLFWwindow* gWindow = NULL;
 bool gWireframe = false;
 const std::string texture1 = "airplane.png";
+const std::string texture2 = "crate.jpg";
 
 void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode);
 void showFPS(GLFWwindow * window);
@@ -66,8 +67,11 @@ int main() {
 	ShaderProgram shaderProgram;
 	shaderProgram.LoadShaders("basic.vert", "basic.frag");
 
-	Texture2D texture;
-	texture.loadTexture(texture1, true);
+	Texture2D textureObj1;
+	textureObj1.loadTexture(texture1, true);
+
+	Texture2D textureObj2;
+	textureObj2.loadTexture(texture2, true);
 
 	//main loop
 	while (!glfwWindowShouldClose(gWindow)) {
@@ -76,7 +80,9 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//bind texture information we created
-		texture.bind(0);
+		textureObj1.bind(0);
+		textureObj2.bind(1);
+		
 
 		//Bind the vertex information we created
 		glBindVertexArray(vao);
@@ -85,6 +91,9 @@ int main() {
 		//glUseProgram(shaderProgram);
 		shaderProgram.Use();
 
+		//bind uniform values to texture bind values
+		glUniform1i(glGetUniformLocation(shaderProgram.getProgram(), "myTexture"), 0);
+		glUniform1i(glGetUniformLocation(shaderProgram.getProgram(), "myTexture2"), 1);
 		//Defining the vlue blueColor to change based on time using some fun math.
 		/*
 		GLfloat time = glfwGetTime();

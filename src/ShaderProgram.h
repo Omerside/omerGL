@@ -24,6 +24,7 @@ public:
 	void SetUniform(const GLchar* name, const glm::vec2& v);
 	void SetUniform(const GLchar* name, const glm::vec3& v);
 	void SetUniform(const GLchar* name, const glm::vec4& v);
+	GLuint getProgram()const;
 
 private:
 	GLuint mHandle; // prefix m to denote it's a private class member

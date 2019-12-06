@@ -138,3 +138,7 @@ void ShaderProgram::SetUniform(const GLchar* name, const glm::vec4& v) {
 	GLint loc = GetUniformLocation(name);
 	glUniform4f(loc, v.x, v.y, v.z, v.x);
 }
+
+GLuint ShaderProgram::getProgram()const {
+	return mHandle;
+}
