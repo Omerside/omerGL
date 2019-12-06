@@ -5,12 +5,14 @@
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
 #include "ShaderProgram.h"
+#include "Texture2D.h"
 
 const char* APP_TITLE = "OmerGL";
 const int gWindowWidth = 800;
 const int gWindowHeight = 600;
 GLFWwindow* gWindow = NULL;
 bool gWireframe = false;
+const std::string texture1 = "airplane.png";
 
 void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode);
 void showFPS(GLFWwindow * window);
@@ -22,10 +24,11 @@ int main() {
 		return -1;
 	}
 	GLfloat vertices[] = {
-		-0.5f,  0.5f, 0.0f,		// Top left
-		 0.5f,  0.5f, 0.0f,		// Top right
-		 0.5f, -0.5f, 0.0f,		// Bottom right
-		-0.5f, -0.5f, 0.0f		// Bottom left 
+		//position			//texture coords
+		-0.5f,  0.5f, 0.0f,	0.0f, 1.0f,	// Top left
+		 0.5f,  0.5f, 0.0f,	1.0f, 1.0f,	// Top right
+		 0.5f, -0.5f, 0.0f,	1.0f, 0.0f,	// Bottom right
+		-0.5f, -0.5f, 0.0f,	0.0f, 0.0f	// Bottom left 
 	};
 
 	GLuint indices[] = {
@@ -42,8 +45,14 @@ int main() {
 
 	glGenVertexArrays(1, &vao);				// Tell OpenGL to create new Vertex Array Object
 	glBindVertexArray(vao);					// Make it the current one
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);	// Define a layout for the first vertex buffer "0"
+
+	//Define position
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), NULL);	// Define a layout for the first vertex buffer "0"
 	glEnableVertexAttribArray(0);			// Enable the first attribute or attribute "0"
+
+	//define texture 
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);			//enable the second attribute.
 
 	// Set up index buffer
 	glGenBuffers(1, &ibo);	// Create buffer space on the GPU for the index buffer
@@ -57,12 +66,17 @@ int main() {
 	ShaderProgram shaderProgram;
 	shaderProgram.LoadShaders("basic.vert", "basic.frag");
 
+	Texture2D texture;
+	texture.loadTexture(texture1, true);
+
 	//main loop
 	while (!glfwWindowShouldClose(gWindow)) {
 		showFPS(gWindow);
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		//bind texture information we created
+		texture.bind(0);
 
 		//Bind the vertex information we created
 		glBindVertexArray(vao);
@@ -72,16 +86,19 @@ int main() {
 		shaderProgram.Use();
 
 		//Defining the vlue blueColor to change based on time using some fun math.
+		/*
 		GLfloat time = glfwGetTime();
 		GLfloat blueColor = (sin(time) / 2) + 0.5f;
 
 		//Defining the position to vary and give our square a bounce.
 		glm::vec2 pos;
-		pos.x = sin(time*10) / 4;
-		pos.y = cos(time*20) / 2;
+		pos.x = sin(time*5) / 4;
+		pos.y = cos(time*10) / 2;
 
 		shaderProgram.SetUniform("posOffset", pos);
-		shaderProgram.SetUniform("vertColor", glm::vec4(0.0f, 0.0f, blueColor, 1.0f));
+		shaderProgram.SetUniform("vertColor", glm::vec4(blueColor, 0.0f, 0.0f, 1.0f));
+		*/
+		//shaderProgram.SetUniform("vertColor", glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 		glBindVertexArray(vao);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);

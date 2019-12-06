@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -24,9 +24,11 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\ShaderProgram.cpp" />
+    <ClCompile Include="src\Texture2D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ShaderProgram.h" />
+    <ClInclude Include="src\Texture2D.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="bin\basic.frag" />
