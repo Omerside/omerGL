@@ -4,18 +4,23 @@
 #define GLEW_STATIC
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
+#include "glm/gtc/matrix_transform.hpp"
 #include "ShaderProgram.h"
 #include "Texture2D.h"
+#define  GLM_FORCE_CTOR_INIT
+
+using namespace glm;
 
 const char* APP_TITLE = "OmerGL";
-const int gWindowWidth = 800;
-const int gWindowHeight = 600;
+int gWindowWidth = 1024;
+int gWindowHeight = 768;
 GLFWwindow* gWindow = NULL;
 bool gWireframe = false;
-const std::string texture1 = "airplane.png";
+const std::string texture1 = "wooden_crate.jpg";
 const std::string texture2 = "crate.jpg";
 
 void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode);
+void glfw_OnFrameBufferSize(GLFWwindow* window, int width, int height);
 void showFPS(GLFWwindow * window);
 bool initOpenGL();
 
@@ -25,20 +30,60 @@ int main() {
 		return -1;
 	}
 	GLfloat vertices[] = {
-		//position			//texture coords
-		-0.5f,  0.5f, 0.0f,	0.0f, 1.0f,	// Top left
-		 0.5f,  0.5f, 0.0f,	1.0f, 1.0f,	// Top right
-		 0.5f, -0.5f, 0.0f,	1.0f, 0.0f,	// Bottom right
-		-0.5f, -0.5f, 0.0f,	0.0f, 0.0f	// Bottom left 
-	};
+		// position		 // tex coords
 
-	GLuint indices[] = {
-		0, 1, 2,  // First Triangle
-		0, 2, 3   // Second Triangle
+	   // front face
+	   -1.0f,  1.0f,  1.0f, 0.0f, 1.0f,
+		1.0f, -1.0f,  1.0f, 1.0f, 0.0f,
+		1.0f,  1.0f,  1.0f, 1.0f, 1.0f,
+	   -1.0f,  1.0f,  1.0f, 0.0f, 1.0f,
+	   -1.0f, -1.0f,  1.0f, 0.0f, 0.0f,
+		1.0f, -1.0f,  1.0f, 1.0f, 0.0f,
+
+		// back face
+		-1.0f,  1.0f, -1.0f, 0.0f, 1.0f,
+		 1.0f, -1.0f, -1.0f, 1.0f, 0.0f,
+		 1.0f,  1.0f, -1.0f, 1.0f, 1.0f,
+		-1.0f,  1.0f, -1.0f, 0.0f, 1.0f,
+		-1.0f, -1.0f, -1.0f, 0.0f, 0.0f,
+		 1.0f, -1.0f, -1.0f, 1.0f, 0.0f,
+
+		 // left face
+		 -1.0f,  1.0f, -1.0f, 0.0f, 1.0f,
+		 -1.0f, -1.0f,  1.0f, 1.0f, 0.0f,
+		 -1.0f,  1.0f,  1.0f, 1.0f, 1.0f,
+		 -1.0f,  1.0f, -1.0f, 0.0f, 1.0f,
+		 -1.0f, -1.0f, -1.0f, 0.0f, 0.0f,
+		 -1.0f, -1.0f,  1.0f, 1.0f, 0.0f,
+
+		 // right face
+		  1.0f,  1.0f,  1.0f, 0.0f, 1.0f,
+		  1.0f, -1.0f, -1.0f, 1.0f, 0.0f,
+		  1.0f,  1.0f, -1.0f, 1.0f, 1.0f,
+		  1.0f,  1.0f,  1.0f, 0.0f, 1.0f,
+		  1.0f, -1.0f,  1.0f, 0.0f, 0.0f,
+		  1.0f, -1.0f, -1.0f, 1.0f, 0.0f,
+
+		  // top face
+		 -1.0f,  1.0f, -1.0f, 0.0f, 1.0f,
+		  1.0f,  1.0f,  1.0f, 1.0f, 0.0f,
+		  1.0f,  1.0f, -1.0f, 1.0f, 1.0f,
+		 -1.0f,  1.0f, -1.0f, 0.0f, 1.0f,
+		 -1.0f,  1.0f,  1.0f, 0.0f, 0.0f,
+		  1.0f,  1.0f,  1.0f, 1.0f, 0.0f,
+
+		  // bottom face
+		 -1.0f, -1.0f,  1.0f, 0.0f, 1.0f,
+		  1.0f, -1.0f, -1.0f, 1.0f, 0.0f,
+		  1.0f, -1.0f,  1.0f, 1.0f, 1.0f,
+		 -1.0f, -1.0f,  1.0f, 0.0f, 1.0f,
+		 -1.0f, -1.0f, -1.0f, 0.0f, 0.0f,
+		  1.0f, -1.0f, -1.0f, 1.0f, 0.0f,
 	};
+	vec3 cubePos = vec3(0.0f, 0.0f, -5.0f);
 
 	// 2. Set up buffers on the GPU
-	GLuint vbo, ibo, vao;
+	GLuint vbo, vao;
 
 	glGenBuffers(1, &vbo);					// Generate an empty vertex buffer on the GPU
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);		// "bind" or set as the current buffer we are working with
@@ -55,10 +100,11 @@ int main() {
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);			//enable the second attribute.
 
-	// Set up index buffer
+	/* Set up index buffer (deprecated)
 	glGenBuffers(1, &ibo);	// Create buffer space on the GPU for the index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	*/
 
 	glBindVertexArray(0);					// unbind to make sure other code doesn't change it
 
@@ -70,56 +116,84 @@ int main() {
 	Texture2D textureObj1;
 	textureObj1.loadTexture(texture1, true);
 
-	Texture2D textureObj2;
-	textureObj2.loadTexture(texture2, true);
+	//Texture2D textureObj2;
+	//textureObj2.loadTexture(texture2, true);
+
+	float cubeAngle = 0.0f;
+	double lastTime = glfwGetTime();
 
 	//main loop
 	while (!glfwWindowShouldClose(gWindow)) {
 		showFPS(gWindow);
+		double currentTime = glfwGetTime();
+		double deltaTime = currentTime - lastTime;
+
 		glfwPollEvents();
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//bind texture information we created
 		textureObj1.bind(0);
-		textureObj2.bind(1);
+		//textureObj2.bind(1);
 		
+		cubeAngle += (float)(deltaTime * 50.0f);
+		if (cubeAngle >= 360.0f) cubeAngle = 0.0f;
 
-		//Bind the vertex information we created
-		glBindVertexArray(vao);
+		mat4 model, view, projection;
+
+		model = translate(model, cubePos) * rotate(model, radians(cubeAngle), vec3(0.0f, 1.0f, 0.0));
+		
+		vec3 camPos(0.0f, 0.0f, 0.0f); // where our camera is looking from.
+		vec3 targetPos(0.0f, 0.0f, -1.0f); // What our target is
+		vec3 up(0.0f, 1.0f, 0.0f); // The up vector is basically a vector defining your world's "upwards" direction
+		view = lookAt(camPos, targetPos, up); // creates a viewing matrix derived from an eye point, a reference point indicating the center of the scene, and an UP vector.
+
+		projection = perspective(radians(45.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
 
 		//Use the "program", which is our two shaders (vertex and fragment)
 		//glUseProgram(shaderProgram);
 		shaderProgram.Use();
 
-		//bind uniform values to texture bind values
+		shaderProgram.SetUniform("model", model);
+		shaderProgram.SetUniform("view", view);
+		shaderProgram.SetUniform("projection", projection);
+
+		//Bind the vertex information we created
+		//glBindVertexArray(vao);
+
+
+
+		/*bind uniform values to texture bind values (deprecated)
 		glUniform1i(glGetUniformLocation(shaderProgram.getProgram(), "myTexture"), 0);
 		glUniform1i(glGetUniformLocation(shaderProgram.getProgram(), "myTexture2"), 1);
+		*/
+
 		//Defining the vlue blueColor to change based on time using some fun math.
 		/*
 		GLfloat time = glfwGetTime();
 		GLfloat blueColor = (sin(time) / 2) + 0.5f;
 
 		//Defining the position to vary and give our square a bounce.
-		glm::vec2 pos;
+		vec2 pos;
 		pos.x = sin(time*5) / 4;
 		pos.y = cos(time*10) / 2;
 
 		shaderProgram.SetUniform("posOffset", pos);
-		shaderProgram.SetUniform("vertColor", glm::vec4(blueColor, 0.0f, 0.0f, 1.0f));
+		shaderProgram.SetUniform("vertColor", vec4(blueColor, 0.0f, 0.0f, 1.0f));
 		*/
-		//shaderProgram.SetUniform("vertColor", glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+
+		//shaderProgram.SetUniform("vertColor", vec4(0.0f, 0.0f, 0.0f, 1.0f));
 		glBindVertexArray(vao);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);
+		lastTime = currentTime;
 	}
 
 	// Clean up
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ibo);
 
 	glfwTerminate();
 	return 0;
@@ -155,6 +229,10 @@ bool initOpenGL() {
 	}
 
 	glClearColor(0.23f, 0.38f, 0.47f, 1.0f);
+	glViewport(0, 0, gWindowWidth, gWindowHeight);
+	glEnable(GL_DEPTH_TEST); // render closer vertices last
+
+
 	return true;
 }
 
@@ -173,6 +251,12 @@ void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode)
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
+}
+
+void glfw_OnFrameBufferSize(GLFWwindow* window, int width, int height) {
+	gWindowWidth = width;
+	gWindowHeight = height;
+	glViewport(0, 0, gWindowWidth, gWindowHeight);
 }
 
 void showFPS(GLFWwindow * window) {
