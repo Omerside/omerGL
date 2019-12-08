@@ -7,6 +7,8 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "ShaderProgram.h"
 #include "Texture2D.h"
+#include "Camera.h"
+
 #define  GLM_FORCE_CTOR_INIT
 
 using namespace glm;
@@ -19,8 +21,18 @@ bool gWireframe = false;
 const std::string texture1 = "wooden_crate.jpg";
 const std::string texture2 = "crate.jpg";
 
+float gCubeAngle = 0.0f;
+
+OrbitCamera orbitCamera;
+float gYaw = 0.0f;
+float gPitch = 0.0f;
+float gRadius = 0.0f;
+const float MOUSE_SENSITIVITY = 0.25F;
+
 void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode);
 void glfw_OnFrameBufferSize(GLFWwindow* window, int width, int height);
+void glfw_onMouseMove(GLFWwindow* window, double posX, double posY);
+
 void showFPS(GLFWwindow * window);
 bool initOpenGL();
 
@@ -140,13 +152,21 @@ int main() {
 
 		mat4 model, view, projection;
 
+		orbitCamera.setLookAt(cubePos);
+		orbitCamera.rotate(gYaw, gPitch);
+		orbitCamera.setRadius(gRadius);
+
 		model = translate(model, cubePos) * rotate(model, radians(cubeAngle), vec3(0.0f, 1.0f, 0.0));
 		
+		/* Hard-setting camera values
 		vec3 camPos(0.0f, 0.0f, 0.0f); // where our camera is looking from.
 		vec3 targetPos(0.0f, 0.0f, -1.0f); // What our target is
 		vec3 up(0.0f, 1.0f, 0.0f); // The up vector is basically a vector defining your world's "upwards" direction
-		view = lookAt(camPos, targetPos, up); // creates a viewing matrix derived from an eye point, a reference point indicating the center of the scene, and an UP vector.
+		*/
 
+		//view = lookAt(camPos, targetPos, up); // creates a viewing matrix derived from an eye point, a reference point indicating the center of the scene, and an UP vector.
+		view = orbitCamera.getViewMatrix();
+		
 		projection = perspective(radians(45.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
 
 		//Use the "program", which is our two shaders (vertex and fragment)
@@ -221,6 +241,7 @@ bool initOpenGL() {
 
 	glfwMakeContextCurrent(gWindow);
 	glfwSetKeyCallback(gWindow, glfw_onKey);
+	glfwSetCursorPosCallback(gWindow, glfw_onMouseMove);
 
 	glewExperimental = GL_TRUE;
 
@@ -228,7 +249,7 @@ bool initOpenGL() {
 		std::cerr << "GLEW NOT OK" << std::endl;
 	}
 
-	glClearColor(0.23f, 0.38f, 0.47f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);//0.23f, 0.38f, 0.47f, 1.0f);
 	glViewport(0, 0, gWindowWidth, gWindowHeight);
 	glEnable(GL_DEPTH_TEST); // render closer vertices last
 
@@ -257,6 +278,30 @@ void glfw_OnFrameBufferSize(GLFWwindow* window, int width, int height) {
 	gWindowWidth = width;
 	gWindowHeight = height;
 	glViewport(0, 0, gWindowWidth, gWindowHeight);
+}
+ 
+void glfw_onMouseMove(GLFWwindow* window, double posX, double posY) {
+	static glm::vec2 lastMousePos = glm::vec2(0.0);
+	
+	// update angles based on left mouse button input 
+	if (glfwGetMouseButton(gWindow, GLFW_MOUSE_BUTTON_LEFT) == 1) {
+
+		//1 PIXEL = .25 OF AN ANGLE DEGREE ROTATION
+		gYaw -= ((float)posX - lastMousePos.x) * MOUSE_SENSITIVITY;
+		gPitch -= ((float)posY - lastMousePos.y) * MOUSE_SENSITIVITY;
+	}
+
+	// update angles based on left mouse button input 
+	if (glfwGetMouseButton(gWindow, GLFW_MOUSE_BUTTON_RIGHT) == 1) {
+
+		//1 PIXEL = .25 OF AN ANGLE DEGREE ROTATION
+		float dx = 0.01f * ((float)posX - lastMousePos.x);
+		float dy = 0.01f * ((float)posY - lastMousePos.y);
+		gRadius += dx - dy;
+	}
+
+	lastMousePos.x = (float)posX;
+	lastMousePos.y = (float)posY;
 }
 
 void showFPS(GLFWwindow * window) {
