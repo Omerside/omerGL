@@ -8,6 +8,7 @@
 #include "ShaderProgram.h"
 #include "Texture2D.h"
 #include "Camera.h"
+#include "glm/ext.hpp"
 
 #define  GLM_FORCE_CTOR_INIT
 
@@ -18,16 +19,17 @@ int gWindowWidth = 1024;
 int gWindowHeight = 768;
 GLFWwindow* gWindow = NULL;
 bool gWireframe = false;
-const std::string texture1 = "wooden_crate.jpg";
-const std::string texture2 = "crate.jpg";
-
 float gCubeAngle = 0.0f;
+const std::string texture1 = "wooden_crate.jpg";
+const std::string texture2 = "grid.jpg";
 
-OrbitCamera orbitCamera;
+
+//cameraObj cameraObj;
+FirstPersonCamera cameraObj;
 float gYaw = 0.0f;
 float gPitch = 0.0f;
 float gRadius = 0.0f;
-const float MOUSE_SENSITIVITY = 0.25F;
+const float MOUSE_SENSITIVITY = 0.15F;
 
 void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode);
 void glfw_OnFrameBufferSize(GLFWwindow* window, int width, int height);
@@ -128,12 +130,12 @@ int main() {
 	Texture2D textureObj1;
 	textureObj1.loadTexture(texture1, true);
 
-	//Texture2D textureObj2;
-	//textureObj2.loadTexture(texture2, true);
+	Texture2D textureObj2;
+	textureObj2.loadTexture(texture2, true);
 
 	float cubeAngle = 0.0f;
 	double lastTime = glfwGetTime();
-
+	cameraObj.setLookAt(cubePos);
 	//main loop
 	while (!glfwWindowShouldClose(gWindow)) {
 		showFPS(gWindow);
@@ -145,18 +147,19 @@ int main() {
 
 		//bind texture information we created
 		textureObj1.bind(0);
-		//textureObj2.bind(1);
+		textureObj2.bind(1);
 		
 		cubeAngle += (float)(deltaTime * 50.0f);
 		if (cubeAngle >= 360.0f) cubeAngle = 0.0f;
 
 		mat4 model, view, projection;
 
-		orbitCamera.setLookAt(cubePos);
-		orbitCamera.rotate(gYaw, gPitch);
-		orbitCamera.setRadius(gRadius);
+		
+		//cameraObj.rotateOnCamera(gYaw, gPitch);//cameraObj.rotateOnObject(gYaw, gPitch);
+		cameraObj.ExecuteMove(gYaw, gPitch);
+		//cameraObj.setRadius(gRadius);
 
-		model = translate(model, cubePos) * rotate(model, radians(cubeAngle), vec3(0.0f, 1.0f, 0.0));
+		model = translate(model, cubePos);// * rotate(model, radians(cubeAngle), vec3(0.0f, 1.0f, 0.0));
 		
 		/* Hard-setting camera values
 		vec3 camPos(0.0f, 0.0f, 0.0f); // where our camera is looking from.
@@ -165,7 +168,7 @@ int main() {
 		*/
 
 		//view = lookAt(camPos, targetPos, up); // creates a viewing matrix derived from an eye point, a reference point indicating the center of the scene, and an UP vector.
-		view = orbitCamera.getViewMatrix();
+		view = cameraObj.getViewMatrix();
 		
 		projection = perspective(radians(45.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
 
@@ -204,8 +207,18 @@ int main() {
 		//shaderProgram.SetUniform("vertColor", vec4(0.0f, 0.0f, 0.0f, 1.0f));
 		glBindVertexArray(vao);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		textureObj2.bind(0);
+
+		glm::vec3 floorPos;
+		floorPos.y = -1.0f;
+		model = translate(model, floorPos) * glm::scale(model, glm::vec3(10.0f, 0.01f, 10.0f));
+		shaderProgram.SetUniform("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
 		glBindVertexArray(0);
 
+		//cameraObj.resetDirection();
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);
 		lastTime = currentTime;
@@ -228,6 +241,7 @@ bool initOpenGL() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	
 
 
 
@@ -242,6 +256,7 @@ bool initOpenGL() {
 	glfwMakeContextCurrent(gWindow);
 	glfwSetKeyCallback(gWindow, glfw_onKey);
 	glfwSetCursorPosCallback(gWindow, glfw_onMouseMove);
+	glfwSetInputMode(gWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glewExperimental = GL_TRUE;
 
@@ -264,7 +279,7 @@ void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode)
 
 
 	//Add wireframe mode on `W` key
-	if (key == GLFW_KEY_W && action == GLFW_PRESS)
+	if (key == GLFW_KEY_P && action == GLFW_PRESS)
 	{
 		gWireframe = !gWireframe;
 		if (gWireframe)
@@ -272,6 +287,47 @@ void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode)
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
+	if (key == GLFW_KEY_W && action == GLFW_PRESS) {
+		if (typeid(cameraObj) == typeid(FirstPersonCamera)) {
+			cameraObj.move(FirstPersonCamera::DIRECTION::FORWARD);
+		}
+	}
+	else if (key == GLFW_KEY_W && action == GLFW_RELEASE) {
+		if (typeid(cameraObj) == typeid(FirstPersonCamera)) {
+			cameraObj.move(FirstPersonCamera::DIRECTION::NONE);
+		}
+	}
+	if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+		if (typeid(cameraObj) == typeid(FirstPersonCamera)) {
+			cameraObj.move(FirstPersonCamera::DIRECTION::BACK);
+		}
+	}
+	else if (key == GLFW_KEY_S && action == GLFW_RELEASE) {
+		if (typeid(cameraObj) == typeid(FirstPersonCamera)) {
+			cameraObj.move(FirstPersonCamera::DIRECTION::NONE);
+		}
+	}
+	if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+		if (typeid(cameraObj) == typeid(FirstPersonCamera)) {
+			cameraObj.move(FirstPersonCamera::DIRECTION::LEFT);
+		}
+	}
+	else if (key == GLFW_KEY_A && action == GLFW_RELEASE) {
+		if (typeid(cameraObj) == typeid(FirstPersonCamera)) {
+			cameraObj.move(FirstPersonCamera::DIRECTION::NONE);
+		}
+	}
+	if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+		if (typeid(cameraObj) == typeid(FirstPersonCamera)) {
+			cameraObj.move(FirstPersonCamera::DIRECTION::RIGHT);
+		}
+	}
+	else if (key == GLFW_KEY_D && action == GLFW_RELEASE) {
+		if (typeid(cameraObj) == typeid(FirstPersonCamera)) {
+			cameraObj.move(FirstPersonCamera::DIRECTION::NONE);
+		}
+	}
+
 }
 
 void glfw_OnFrameBufferSize(GLFWwindow* window, int width, int height) {
@@ -287,11 +343,12 @@ void glfw_onMouseMove(GLFWwindow* window, double posX, double posY) {
 	if (glfwGetMouseButton(gWindow, GLFW_MOUSE_BUTTON_LEFT) == 1) {
 
 		//1 PIXEL = .25 OF AN ANGLE DEGREE ROTATION
-		gYaw -= ((float)posX - lastMousePos.x) * MOUSE_SENSITIVITY;
+		gYaw += ((float)posX - lastMousePos.x) * MOUSE_SENSITIVITY;
 		gPitch -= ((float)posY - lastMousePos.y) * MOUSE_SENSITIVITY;
 	}
 
 	// update angles based on left mouse button input 
+	//Only applicable to retating camera
 	if (glfwGetMouseButton(gWindow, GLFW_MOUSE_BUTTON_RIGHT) == 1) {
 
 		//1 PIXEL = .25 OF AN ANGLE DEGREE ROTATION
@@ -317,13 +374,15 @@ void showFPS(GLFWwindow * window) {
 		previousSeconds = currentSeconds;
 		double fps = (double)frameCount / elapsedSeconds;
 		double msPerFrame = 1000.0 / fps;
+		vec3 pos = cameraObj.getPosition();
+		vec3 targ = cameraObj.getTarget();
 
 		std::ostringstream outs;
 		outs.precision(3);
 		outs << std::fixed
 			<< APP_TITLE << "   "
-			<< "FPS: " << fps << "   "
-			<< "FRAME TIME: " << msPerFrame << "  (ms)";
+			<< "CAM POS: " << to_string(pos) << "   "
+			<< "TARGET POS: " << to_string(targ) << "  (ms)";
 		glfwSetWindowTitle(window, outs.str().c_str());
 
 		frameCount = 0;
