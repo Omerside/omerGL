@@ -8,6 +8,7 @@
 #include "ShaderProgram.h"
 #include "Texture2D.h"
 #include "Camera.h"
+#include "Mesh.h"
 #include "glm/ext.hpp"
 
 #define  GLM_FORCE_CTOR_INIT
@@ -20,8 +21,6 @@ int gWindowHeight = 768;
 GLFWwindow* gWindow = NULL;
 bool gWireframe = false;
 float gCubeAngle = 0.0f;
-const std::string texture1 = "wooden_crate.jpg";
-const std::string texture2 = "grid.jpg";
 
 
 //cameraObj cameraObj;
@@ -43,99 +42,46 @@ int main() {
 		std::cerr << "GLFW init error - aborting" << std::endl;
 		return -1;
 	}
-	GLfloat vertices[] = {
-		// position		 // tex coords
-
-	   // front face
-	   -1.0f,  1.0f,  1.0f, 0.0f, 1.0f,
-		1.0f, -1.0f,  1.0f, 1.0f, 0.0f,
-		1.0f,  1.0f,  1.0f, 1.0f, 1.0f,
-	   -1.0f,  1.0f,  1.0f, 0.0f, 1.0f,
-	   -1.0f, -1.0f,  1.0f, 0.0f, 0.0f,
-		1.0f, -1.0f,  1.0f, 1.0f, 0.0f,
-
-		// back face
-		-1.0f,  1.0f, -1.0f, 0.0f, 1.0f,
-		 1.0f, -1.0f, -1.0f, 1.0f, 0.0f,
-		 1.0f,  1.0f, -1.0f, 1.0f, 1.0f,
-		-1.0f,  1.0f, -1.0f, 0.0f, 1.0f,
-		-1.0f, -1.0f, -1.0f, 0.0f, 0.0f,
-		 1.0f, -1.0f, -1.0f, 1.0f, 0.0f,
-
-		 // left face
-		 -1.0f,  1.0f, -1.0f, 0.0f, 1.0f,
-		 -1.0f, -1.0f,  1.0f, 1.0f, 0.0f,
-		 -1.0f,  1.0f,  1.0f, 1.0f, 1.0f,
-		 -1.0f,  1.0f, -1.0f, 0.0f, 1.0f,
-		 -1.0f, -1.0f, -1.0f, 0.0f, 0.0f,
-		 -1.0f, -1.0f,  1.0f, 1.0f, 0.0f,
-
-		 // right face
-		  1.0f,  1.0f,  1.0f, 0.0f, 1.0f,
-		  1.0f, -1.0f, -1.0f, 1.0f, 0.0f,
-		  1.0f,  1.0f, -1.0f, 1.0f, 1.0f,
-		  1.0f,  1.0f,  1.0f, 0.0f, 1.0f,
-		  1.0f, -1.0f,  1.0f, 0.0f, 0.0f,
-		  1.0f, -1.0f, -1.0f, 1.0f, 0.0f,
-
-		  // top face
-		 -1.0f,  1.0f, -1.0f, 0.0f, 1.0f,
-		  1.0f,  1.0f,  1.0f, 1.0f, 0.0f,
-		  1.0f,  1.0f, -1.0f, 1.0f, 1.0f,
-		 -1.0f,  1.0f, -1.0f, 0.0f, 1.0f,
-		 -1.0f,  1.0f,  1.0f, 0.0f, 0.0f,
-		  1.0f,  1.0f,  1.0f, 1.0f, 0.0f,
-
-		  // bottom face
-		 -1.0f, -1.0f,  1.0f, 0.0f, 1.0f,
-		  1.0f, -1.0f, -1.0f, 1.0f, 0.0f,
-		  1.0f, -1.0f,  1.0f, 1.0f, 1.0f,
-		 -1.0f, -1.0f,  1.0f, 0.0f, 1.0f,
-		 -1.0f, -1.0f, -1.0f, 0.0f, 0.0f,
-		  1.0f, -1.0f, -1.0f, 1.0f, 0.0f,
-	};
-	vec3 cubePos = vec3(0.0f, 0.0f, -5.0f);
-
-	// 2. Set up buffers on the GPU
-	GLuint vbo, vao;
-
-	glGenBuffers(1, &vbo);					// Generate an empty vertex buffer on the GPU
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);		// "bind" or set as the current buffer we are working with
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);	// copy the data from CPU to GPU
-
-	glGenVertexArrays(1, &vao);				// Tell OpenGL to create new Vertex Array Object
-	glBindVertexArray(vao);					// Make it the current one
-
-	//Define position
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), NULL);	// Define a layout for the first vertex buffer "0"
-	glEnableVertexAttribArray(0);			// Enable the first attribute or attribute "0"
-
-	//define texture 
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);			//enable the second attribute.
-
-	/* Set up index buffer (deprecated)
-	glGenBuffers(1, &ibo);	// Create buffer space on the GPU for the index buffer
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	*/
-
-	glBindVertexArray(0);					// unbind to make sure other code doesn't change it
-
+	
 
 	//creating shader
 	ShaderProgram shaderProgram;
 	shaderProgram.LoadShaders("basic.vert", "basic.frag");
 
-	Texture2D textureObj1;
-	textureObj1.loadTexture(texture1, true);
+	//model positions
+	vec3 modelPos[] = {
+		vec3(-2.5f, 1.0f, 0.0f),
+		vec3(2.5f, 1.0f, 0.0f),
+		vec3(0.0f, 0.0f, 2.0f),
+		vec3(0.0f, 0.0f, 0.0f),
+	};
 
-	Texture2D textureObj2;
-	textureObj2.loadTexture(texture2, true);
+	//model scaling
+	vec3 modelScale[] = {
+		vec3(1.0f, 1.0f, 1.0f),
+		vec3(1.0f, 1.0f, 1.0f),
+		vec3(1.0f, 1.0f, 1.0f),
+		vec3(10.0f, 0.5f, 10.0f),
+	};
 
-	float cubeAngle = 0.0f;
+	
+	//Load meshes/textures
+	const int numModels = 4;
+	Mesh mesh[numModels];
+	Texture2D texture[numModels];
+
+	mesh[0].loadObj("crate.obj");
+	mesh[1].loadObj("woodCrate.obj");
+	mesh[2].loadObj("robot.obj");
+	mesh[3].loadObj("floor.obj");
+
+	texture[0].loadTexture("crate.jpg", true);
+	texture[1].loadTexture("woodcrate_diffuse.jpg", true);
+	texture[2].loadTexture("robot_diffuse.jpg", true);
+	texture[3].loadTexture("tile_floor.jpg", true);
+
 	double lastTime = glfwGetTime();
-	cameraObj.setLookAt(cubePos);
+
 	//main loop
 	while (!glfwWindowShouldClose(gWindow)) {
 		showFPS(gWindow);
@@ -145,12 +91,6 @@ int main() {
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//bind texture information we created
-		textureObj1.bind(0);
-		textureObj2.bind(1);
-		
-		cubeAngle += (float)(deltaTime * 50.0f);
-		if (cubeAngle >= 360.0f) cubeAngle = 0.0f;
 
 		mat4 model, view, projection;
 
@@ -159,74 +99,33 @@ int main() {
 		cameraObj.ExecuteMove(gYaw, gPitch);
 		//cameraObj.setRadius(gRadius);
 
-		model = translate(model, cubePos);// * rotate(model, radians(cubeAngle), vec3(0.0f, 1.0f, 0.0));
-		
-		/* Hard-setting camera values
-		vec3 camPos(0.0f, 0.0f, 0.0f); // where our camera is looking from.
-		vec3 targetPos(0.0f, 0.0f, -1.0f); // What our target is
-		vec3 up(0.0f, 1.0f, 0.0f); // The up vector is basically a vector defining your world's "upwards" direction
-		*/
-
-		//view = lookAt(camPos, targetPos, up); // creates a viewing matrix derived from an eye point, a reference point indicating the center of the scene, and an UP vector.
-		view = cameraObj.getViewMatrix();
-		
+		//model = translate(model, cubePos);
+		view = cameraObj.getViewMatrix();	
 		projection = perspective(radians(45.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
 
 		//Use the "program", which is our two shaders (vertex and fragment)
 		//glUseProgram(shaderProgram);
 		shaderProgram.Use();
 
-		shaderProgram.SetUniform("model", model);
+		
 		shaderProgram.SetUniform("view", view);
 		shaderProgram.SetUniform("projection", projection);
 
-		//Bind the vertex information we created
-		//glBindVertexArray(vao);
+		for (int i = 0; i < numModels; i++) {
+			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
+			shaderProgram.SetUniform("model", model);
 
+			texture[i].bind(0);
+			mesh[i].draw();
+			texture[i].unbind(0);
 
+		}
 
-		/*bind uniform values to texture bind values (deprecated)
-		glUniform1i(glGetUniformLocation(shaderProgram.getProgram(), "myTexture"), 0);
-		glUniform1i(glGetUniformLocation(shaderProgram.getProgram(), "myTexture2"), 1);
-		*/
-
-		//Defining the vlue blueColor to change based on time using some fun math.
-		/*
-		GLfloat time = glfwGetTime();
-		GLfloat blueColor = (sin(time) / 2) + 0.5f;
-
-		//Defining the position to vary and give our square a bounce.
-		vec2 pos;
-		pos.x = sin(time*5) / 4;
-		pos.y = cos(time*10) / 2;
-
-		shaderProgram.SetUniform("posOffset", pos);
-		shaderProgram.SetUniform("vertColor", vec4(blueColor, 0.0f, 0.0f, 1.0f));
-		*/
-
-		//shaderProgram.SetUniform("vertColor", vec4(0.0f, 0.0f, 0.0f, 1.0f));
-		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		textureObj2.bind(0);
-
-		glm::vec3 floorPos;
-		floorPos.y = -1.0f;
-		model = translate(model, floorPos) * glm::scale(model, glm::vec3(10.0f, 0.01f, 10.0f));
-		shaderProgram.SetUniform("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		glBindVertexArray(0);
-
-		//cameraObj.resetDirection();
+		
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);
 		lastTime = currentTime;
 	}
-
-	// Clean up
-	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &vbo);
 
 	glfwTerminate();
 	return 0;
