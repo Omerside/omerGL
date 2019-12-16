@@ -66,19 +66,19 @@ int main() {
 
 	
 	//Load meshes/textures
-	const int numModels = 4;
+	const int numModels = 1;
 	Mesh mesh[numModels];
 	Texture2D texture[numModels];
 
-	mesh[0].loadObj("crate.obj");
-	mesh[1].loadObj("woodCrate.obj");
-	mesh[2].loadObj("robot.obj");
-	mesh[3].loadObj("floor.obj");
+	//mesh[0].loadObj("crate.obj");
+	//mesh[1].loadObj("woodCrate.obj");
+	mesh[0].loadObj("robot.obj");
+	//mesh[3].loadObj("floor.obj");
 
-	texture[0].loadTexture("crate.jpg", true);
-	texture[1].loadTexture("woodcrate_diffuse.jpg", true);
-	texture[2].loadTexture("robot_diffuse.jpg", true);
-	texture[3].loadTexture("tile_floor.jpg", true);
+	//texture[0].loadTexture("crate.jpg", true);
+	//texture[1].loadTexture("woodcrate_diffuse.jpg", true);
+	texture[0].loadTexture("robot_diffuse.jpg", true);
+	//texture[3].loadTexture("tile_floor.jpg", true);
 
 	double lastTime = glfwGetTime();
 
@@ -99,7 +99,7 @@ int main() {
 		cameraObj.ExecuteMove(gYaw, gPitch);
 		//cameraObj.setRadius(gRadius);
 
-		//model = translate(model, cubePos);
+
 		view = cameraObj.getViewMatrix();	
 		projection = perspective(radians(45.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
 
@@ -177,7 +177,7 @@ void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode)
 	}
 
 
-	//Add wireframe mode on `W` key
+	//Add wireframe mode on `P` key
 	if (key == GLFW_KEY_P && action == GLFW_PRESS)
 	{
 		gWireframe = !gWireframe;
