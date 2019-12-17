@@ -25,6 +25,19 @@ void Camera::setCameraPositionVectors(vec3 newCamPos) {
 
 }
 
+void Camera::setCameraTargetVectors(float x, float y, float z) {
+	mTargetPos.x = x;
+	mTargetPos.y = y;
+	mTargetPos.z = z;
+
+}
+
+void Camera::setCameraTargetVectors(vec3 newCamTarget) {
+	mTargetPos = newCamTarget;
+
+}
+
+
 vec3 Camera::getPosition() {
 	return mPosition;
 }

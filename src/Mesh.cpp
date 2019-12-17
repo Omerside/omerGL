@@ -149,7 +149,7 @@ bool Mesh::loadObj(const std::string& filename) {
 			}
 
 			if (tempNormals.size() > 0) {
-				meshVertex.normal = tempNormals[normalIndices[i]];// - 1];
+				meshVertex.normal = tempNormals[normalIndices[i] - 1];
 			}
 
 			if (tempUVs.size() > 0) {

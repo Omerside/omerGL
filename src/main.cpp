@@ -37,6 +37,7 @@ void glfw_onMouseMove(GLFWwindow* window, double posX, double posY);
 void showFPS(GLFWwindow * window);
 bool initOpenGL();
 
+
 int main() {
 	if (!initOpenGL()) {
 		std::cerr << "GLFW init error - aborting" << std::endl;
@@ -53,7 +54,7 @@ int main() {
 		vec3(-2.5f, 1.0f, 0.0f),
 		vec3(2.5f, 1.0f, 0.0f),
 		vec3(0.0f, 0.0f, 2.0f),
-		vec3(0.0f, 0.0f, 0.0f),
+		vec3(0.0f, 0.0f, 0.0f)
 	};
 
 	//model scaling
@@ -61,24 +62,24 @@ int main() {
 		vec3(1.0f, 1.0f, 1.0f),
 		vec3(1.0f, 1.0f, 1.0f),
 		vec3(1.0f, 1.0f, 1.0f),
-		vec3(10.0f, 0.5f, 10.0f),
+		vec3(10.0f, 0.5f, 10.0f)
 	};
 
 	
 	//Load meshes/textures
-	const int numModels = 1;
+	const int numModels = 4;
 	Mesh mesh[numModels];
 	Texture2D texture[numModels];
 
-	//mesh[0].loadObj("crate.obj");
-	//mesh[1].loadObj("woodCrate.obj");
-	mesh[0].loadObj("robot.obj");
-	//mesh[3].loadObj("floor.obj");
+	mesh[0].loadObj("crate.obj");
+	mesh[1].loadObj("woodCrate.obj");
+	mesh[2].loadObj("robot.obj");
+	mesh[3].loadObj("floor.obj");
 
-	//texture[0].loadTexture("crate.jpg", true);
-	//texture[1].loadTexture("woodcrate_diffuse.jpg", true);
-	texture[0].loadTexture("robot_diffuse.jpg", true);
-	//texture[3].loadTexture("tile_floor.jpg", true);
+	texture[0].loadTexture("crate.jpg", true);
+	texture[1].loadTexture("woodcrate_diffuse.jpg", true);
+	texture[2].loadTexture("robot_diffuse.jpg", true);
+	texture[3].loadTexture("tile_floor.jpg", true);
 
 	double lastTime = glfwGetTime();
 

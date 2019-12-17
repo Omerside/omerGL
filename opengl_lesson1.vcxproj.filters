@@ -47,6 +47,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="bin\basic.vert" />
-    <None Include="bin\basic.frag" />
+    <None Include="bin\basic.frag">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
