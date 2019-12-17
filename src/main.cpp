@@ -37,6 +37,7 @@ void glfw_onMouseMove(GLFWwindow* window, double posX, double posY);
 void showFPS(GLFWwindow * window);
 bool initOpenGL();
 
+
 int main() {
 	if (!initOpenGL()) {
 		std::cerr << "GLFW init error - aborting" << std::endl;
@@ -53,7 +54,7 @@ int main() {
 		vec3(-2.5f, 1.0f, 0.0f),
 		vec3(2.5f, 1.0f, 0.0f),
 		vec3(0.0f, 0.0f, 2.0f),
-		vec3(0.0f, 0.0f, 0.0f),
+		vec3(0.0f, 0.0f, 0.0f)
 	};
 
 	//model scaling
@@ -61,7 +62,7 @@ int main() {
 		vec3(1.0f, 1.0f, 1.0f),
 		vec3(1.0f, 1.0f, 1.0f),
 		vec3(1.0f, 1.0f, 1.0f),
-		vec3(10.0f, 0.5f, 10.0f),
+		vec3(10.0f, 0.5f, 10.0f)
 	};
 
 	
@@ -99,7 +100,7 @@ int main() {
 		cameraObj.ExecuteMove(gYaw, gPitch);
 		//cameraObj.setRadius(gRadius);
 
-		//model = translate(model, cubePos);
+
 		view = cameraObj.getViewMatrix();	
 		projection = perspective(radians(45.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
 
@@ -177,7 +178,7 @@ void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode)
 	}
 
 
-	//Add wireframe mode on `W` key
+	//Add wireframe mode on `P` key
 	if (key == GLFW_KEY_P && action == GLFW_PRESS)
 	{
 		gWireframe = !gWireframe;

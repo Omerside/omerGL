@@ -11,8 +11,11 @@ public:
 	virtual void rotate(float yaw, float pitch) {} // degrees, not radians
 	void setCameraPositionVectors(float x, float y, float z);
 	void setCameraPositionVectors(vec3 newCamPos);
+	void setCameraTargetVectors(float x, float y, float z);
+	void setCameraTargetVectors(vec3 newCamTarget);
 	void setLookAt(glm::vec3& target);
 	void setMoveSpeed(float speed);
+
 	vec3 getPosition();
 	vec3 getTarget();
 
