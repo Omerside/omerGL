@@ -38,7 +38,7 @@ void Camera::setCameraTargetVectors(vec3 newCamTarget) {
 }
 
 
-vec3 Camera::getPosition() {
+vec3 Camera::getPosition() const{
 	return mPosition;
 }
 

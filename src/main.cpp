@@ -49,6 +49,10 @@ int main() {
 	ShaderProgram shaderProgram;
 	shaderProgram.LoadShaders("basic.vert", "basic.frag");
 
+	//creating shader (light)
+	ShaderProgram lightingProgram;
+	lightingProgram.LoadShaders("lighting.vert", "lighting.frag");
+
 	//model positions
 	vec3 modelPos[] = {
 		vec3(-2.5f, 1.0f, 0.0f),
@@ -69,12 +73,19 @@ int main() {
 	//Load meshes/textures
 	const int numModels = 4;
 	Mesh mesh[numModels];
+	Mesh lightMesh;
+
 	Texture2D texture[numModels];
 
 	mesh[0].loadObj("crate.obj");
 	mesh[1].loadObj("woodCrate.obj");
 	mesh[2].loadObj("robot.obj");
 	mesh[3].loadObj("floor.obj");
+	lightMesh.loadObj("light.obj");
+
+	//light position
+	vec3 lightPos(0.0f, 2.0f, 10.0f);
+	vec3 lightColor(1.0f, 1.0f, 0.20f);
 
 	texture[0].loadTexture("crate.jpg", true);
 	texture[1].loadTexture("woodcrate_diffuse.jpg", true);
@@ -82,12 +93,18 @@ int main() {
 	texture[3].loadTexture("tile_floor.jpg", true);
 
 	double lastTime = glfwGetTime();
+	float angle = 0.0f;
 
 	//main loop
 	while (!glfwWindowShouldClose(gWindow)) {
 		showFPS(gWindow);
 		double currentTime = glfwGetTime();
 		double deltaTime = currentTime - lastTime;
+		
+		//Explain to Rita what I did :) 
+		angle += radians(deltaTime * 50.0f);
+			
+		lightPos.x = 5.0f * sinf(angle);;
 
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -110,6 +127,9 @@ int main() {
 
 		
 		shaderProgram.SetUniform("view", view);
+		shaderProgram.SetUniform("lightColor", lightColor);
+		shaderProgram.SetUniform("lightPos", lightPos);
+		shaderProgram.SetUniform("viewPos", cameraObj.getPosition());
 		shaderProgram.SetUniform("projection", projection);
 
 		for (int i = 0; i < numModels; i++) {
@@ -121,6 +141,16 @@ int main() {
 			texture[i].unbind(0);
 
 		}
+
+		//render light
+		model = translate(mat4(), lightPos); //* scale(mat4(),(1.0f, 1.0f, 1.0f));
+
+		lightingProgram.Use();
+		lightingProgram.SetUniform("lightColor", lightColor);
+		lightingProgram.SetUniform("model", model);
+		lightingProgram.SetUniform("view", view);
+		lightingProgram.SetUniform("projection", projection);
+		lightMesh.draw();
 
 		
 		// Swap front and back buffers
@@ -164,7 +194,7 @@ bool initOpenGL() {
 		std::cerr << "GLEW NOT OK" << std::endl;
 	}
 
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);//0.23f, 0.38f, 0.47f, 1.0f);
+	glClearColor(0.23f, 0.38f, 0.47f, 1.0f);
 	glViewport(0, 0, gWindowWidth, gWindowHeight);
 	glEnable(GL_DEPTH_TEST); // render closer vertices last
 

@@ -16,7 +16,7 @@ public:
 	void setLookAt(glm::vec3& target);
 	void setMoveSpeed(float speed);
 
-	vec3 getPosition();
+	vec3 getPosition() const;
 	vec3 getTarget();
 
 protected:
