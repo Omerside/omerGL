@@ -148,3 +148,14 @@ void ShaderProgram::SetUniform(const GLchar* name, const glm::mat4& m) {
 GLuint ShaderProgram::getProgram()const {
 	return mHandle;
 }
+
+void ShaderProgram::SetUniformSampler(const GLchar* name, const GLint& slot) {
+	glActiveTexture(GL_TEXTURE0 + slot);
+	GLint loc = GetUniformLocation(name);
+	glUniform1i(loc, slot);
+}
+
+void ShaderProgram::SetUniform(const GLchar* name, const GLfloat& f) {
+	GLint loc = GetUniformLocation(name);
+	glUniform1f(loc, f);
+}

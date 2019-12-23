@@ -21,10 +21,12 @@ public:
 
 	bool LoadShaders(const char* vsFilename, const char* fsFilename);
 	void Use();
+	void SetUniform(const GLchar* name, const GLfloat& f);
 	void SetUniform(const GLchar* name, const glm::vec2& v);
 	void SetUniform(const GLchar* name, const glm::vec3& v);
 	void SetUniform(const GLchar* name, const glm::vec4& v);
 	void SetUniform(const GLchar* name, const glm::mat4& m);
+	void SetUniformSampler(const GLchar* name, const GLint& slot);
 	GLuint getProgram()const;
 
 private:

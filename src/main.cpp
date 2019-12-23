@@ -85,7 +85,7 @@ int main() {
 
 	//light position
 	vec3 lightPos(0.0f, 2.0f, 10.0f);
-	vec3 lightColor(1.0f, 1.0f, 0.20f);
+	vec3 lightColor(1.0f, 1.0f, 1.0f);
 
 	texture[0].loadTexture("crate.jpg", true);
 	texture[1].loadTexture("woodcrate_diffuse.jpg", true);
@@ -95,16 +95,17 @@ int main() {
 	double lastTime = glfwGetTime();
 	float angle = 0.0f;
 
+	cameraObj.setCameraPositionVectors(10.3f, 1.5f, 10.0f);
+
 	//main loop
 	while (!glfwWindowShouldClose(gWindow)) {
 		showFPS(gWindow);
 		double currentTime = glfwGetTime();
 		double deltaTime = currentTime - lastTime;
 		
-		//Explain to Rita what I did :) 
 		angle += radians(deltaTime * 50.0f);
 			
-		lightPos.x = 5.0f * sinf(angle);;
+		lightPos.x = 10.0f * sinf(angle);
 
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -113,7 +114,8 @@ int main() {
 		mat4 model, view, projection;
 
 		
-		//cameraObj.rotateOnCamera(gYaw, gPitch);//cameraObj.rotateOnObject(gYaw, gPitch);
+		//cameraObj.rotateOnCamera(gYaw, gPitch);
+		//cameraObj.rotateOnObject(gYaw, gPitch);
 		cameraObj.ExecuteMove(gYaw, gPitch);
 		//cameraObj.setRadius(gRadius);
 
@@ -127,14 +129,21 @@ int main() {
 
 		
 		shaderProgram.SetUniform("view", view);
-		shaderProgram.SetUniform("lightColor", lightColor);
-		shaderProgram.SetUniform("lightPos", lightPos);
+		shaderProgram.SetUniform("light.ambient", lightColor);// vec3(0.2f, 0.2f, 0.2f));
+		shaderProgram.SetUniform("light.diffuse", vec3(1.8f, 1.7f, 1.2f));
+		shaderProgram.SetUniform("light.specular", vec3(1.8f, 0.7f, 0.2f));
+		shaderProgram.SetUniform("light.position", lightPos);
 		shaderProgram.SetUniform("viewPos", cameraObj.getPosition());
 		shaderProgram.SetUniform("projection", projection);
 
 		for (int i = 0; i < numModels; i++) {
 			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
 			shaderProgram.SetUniform("model", model);
+
+			shaderProgram.SetUniform("material.ambient", vec3(0.1f, 0.1f, 0.1f));
+			shaderProgram.SetUniform("material.specular", vec3(0.5f, 0.5f, 0.5f));
+			shaderProgram.SetUniform("material.shininess", 15.0f);
+			shaderProgram.SetUniformSampler("material.textureMap", 0);
 
 			texture[i].bind(0);
 			mesh[i].draw();
@@ -146,7 +155,7 @@ int main() {
 		model = translate(mat4(), lightPos); //* scale(mat4(),(1.0f, 1.0f, 1.0f));
 
 		lightingProgram.Use();
-		lightingProgram.SetUniform("lightColor", lightColor);
+		lightingProgram.SetUniform("light.ambient", lightColor);
 		lightingProgram.SetUniform("model", model);
 		lightingProgram.SetUniform("view", view);
 		lightingProgram.SetUniform("projection", projection);
