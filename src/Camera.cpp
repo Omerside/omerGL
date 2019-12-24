@@ -29,7 +29,6 @@ void Camera::setCameraTargetVectors(float x, float y, float z) {
 	mTargetPos.x = x;
 	mTargetPos.y = y;
 	mTargetPos.z = z;
-
 }
 
 void Camera::setCameraTargetVectors(vec3 newCamTarget) {
@@ -55,8 +54,12 @@ glm::mat4 Camera::getViewMatrix() const {
 }
 
 
-void Camera::setLookAt(glm::vec3& target) {
+void Camera::setLookAt(vec3& target) {
 	mTargetPos = target;
+}
+
+ const vec3& Camera::getLook() const {
+	return mLook;
 }
 
 OrbitCamera::OrbitCamera() 
@@ -87,6 +90,27 @@ void OrbitCamera::rotateOnObject(float yaw, float pitch) {
 FirstPersonCamera::FirstPersonCamera():
 	direction(NONE) {}
 
+
+void FirstPersonCamera::updateCameraTargetVectors() {
+
+	// Calculate the view direction vector based on yaw and pitch angles (roll not considered)
+// radius is 1 for normalized length
+	glm::vec3 look;
+	look.z = cosf(mPitch) * sinf(mYaw);
+	look.y = sinf(mPitch);
+	look.x = cosf(mPitch) * cosf(mYaw);
+
+	mLook = normalize(look);
+
+	// Re-calculate the Right and Up vector.  For simplicity the Right vector will
+	// be assumed horizontal w.r.t. the world's Up vector.
+	vec3 mRight = glm::normalize(glm::cross(mLook, vec3(0.0f, 1.0f, 0.0f)));
+	//mUp = glm::normalize(glm::cross(mRight, mLook));
+
+	//mTargetPos = mPosition + mLook;
+}
+
+
 void FirstPersonCamera::rotateOnCamera(float yaw, float pitch) {
 
 	if (pitch > 89.0f) {
@@ -103,9 +127,9 @@ void FirstPersonCamera::rotateOnCamera(float yaw, float pitch) {
 	y = sin(mPitch);
 	z = cos(mPitch)*sin(mYaw);
 
-	//setCameraPositionVectors(x, y, z);
+	setCameraPositionVectors(x, y, z);
 	mTargetPos = normalize(vec3(x, y, z)) + mPosition;
-
+	//updateCameraTargetVectors();
 }
 
 vec3 FirstPersonCamera::calcTargetPosRotationOnCamera(float yaw, float pitch) {
@@ -156,6 +180,7 @@ void FirstPersonCamera::ExecuteMove() {
 
 	mTargetPos = newTarget;
 	setCameraPositionVectors(newPos);
+	updateCameraTargetVectors();
 }
 
 void FirstPersonCamera::ExecuteMove(DIRECTION d) {
@@ -190,6 +215,7 @@ void FirstPersonCamera::ExecuteMove(DIRECTION d) {
 
 	mTargetPos = newTarget;
 	setCameraPositionVectors(newPos);
+	updateCameraTargetVectors();
 }
 
 
@@ -201,6 +227,7 @@ void FirstPersonCamera::ExecuteMove(float yaw, float pitch) {
 
 	if (direction == NONE) {
 		mTargetPos = newTarget;
+		updateCameraTargetVectors();
 		return;
 	} else {
 
@@ -229,8 +256,9 @@ void FirstPersonCamera::ExecuteMove(float yaw, float pitch) {
 		
 		setCameraPositionVectors(newPos);
 		mTargetPos = newTarget - cameraDirection;
-
+		updateCameraTargetVectors();
 	}
+
 }
 
 void FirstPersonCamera::ExecuteMove(float yaw, float pitch, DIRECTION directionInput) {
@@ -270,6 +298,7 @@ void FirstPersonCamera::ExecuteMove(float yaw, float pitch, DIRECTION directionI
 		mTargetPos = newTarget + cameraDirection;
 
 	}
+	updateCameraTargetVectors();
 }
 
 void FirstPersonCamera::move(DIRECTION d) {

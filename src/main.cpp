@@ -47,11 +47,8 @@ int main() {
 
 	//creating shader
 	ShaderProgram shaderProgram;
-	shaderProgram.LoadShaders("basic.vert", "basic.frag");
+	shaderProgram.LoadShaders("basic.vert", "lighting_spot.frag");
 
-	//creating shader (light)
-	ShaderProgram lightingProgram;
-	lightingProgram.LoadShaders("lighting.vert", "lighting.frag");
 
 	//model positions
 	vec3 modelPos[] = {
@@ -84,7 +81,7 @@ int main() {
 	lightMesh.loadObj("light.obj");
 
 	//light position
-	vec3 lightPos(0.0f, 2.0f, 10.0f);
+	vec3 lightPos = cameraObj.getPosition();
 	vec3 lightColor(1.0f, 1.0f, 1.0f);
 
 	texture[0].loadTexture("crate.jpg", true);
@@ -95,6 +92,7 @@ int main() {
 	double lastTime = glfwGetTime();
 	float angle = 0.0f;
 
+	cameraObj.setMoveSpeed(0.025f);
 	cameraObj.setCameraPositionVectors(10.3f, 1.5f, 10.0f);
 
 	//main loop
@@ -105,7 +103,8 @@ int main() {
 		
 		angle += radians(deltaTime * 50.0f);
 			
-		lightPos.x = 10.0f * sinf(angle);
+		//lightPos.x = 10.0f * sinf(angle);
+		//lightPos.x -= 0.5f;
 
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -118,6 +117,8 @@ int main() {
 		//cameraObj.rotateOnObject(gYaw, gPitch);
 		cameraObj.ExecuteMove(gYaw, gPitch);
 		//cameraObj.setRadius(gRadius);
+		lightPos = cameraObj.getPosition();
+		//lightPos.y += 0.5f;
 
 
 		view = cameraObj.getViewMatrix();	
@@ -129,10 +130,16 @@ int main() {
 
 		
 		shaderProgram.SetUniform("view", view);
-		shaderProgram.SetUniform("light.ambient", lightColor);// vec3(0.2f, 0.2f, 0.2f));
-		shaderProgram.SetUniform("light.diffuse", vec3(1.8f, 1.7f, 1.2f));
-		shaderProgram.SetUniform("light.specular", vec3(1.8f, 0.7f, 0.2f));
-		shaderProgram.SetUniform("light.position", lightPos);
+		shaderProgram.SetUniform("light.ambient", glm::vec3(0.3f, 0.3f, 0.3f));
+		shaderProgram.SetUniform("light.diffuse", glm::vec3(0.9f, 0.9f, 0.9f));
+		shaderProgram.SetUniform("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+		shaderProgram.SetUniform("light.position", vec3(lightPos));//0.0f, -0.9f, -0.17f));
+		shaderProgram.SetUniform("light.direction", vec3(cameraObj.getLook()));//0.0f, -0.9f, -0.17f));
+		shaderProgram.SetUniform("light.cosInnerCone", cos(radians(25.0f)));
+		shaderProgram.SetUniform("light.cosOuterCone", cos(radians(30.0f)));
+		shaderProgram.SetUniform("light.constant", 1.0f);
+		shaderProgram.SetUniform("light.linear", 0.07f);
+		shaderProgram.SetUniform("light.exponent", 0.017f);
 		shaderProgram.SetUniform("viewPos", cameraObj.getPosition());
 		shaderProgram.SetUniform("projection", projection);
 
@@ -141,8 +148,8 @@ int main() {
 			shaderProgram.SetUniform("model", model);
 
 			shaderProgram.SetUniform("material.ambient", vec3(0.1f, 0.1f, 0.1f));
-			shaderProgram.SetUniform("material.specular", vec3(0.5f, 0.5f, 0.5f));
-			shaderProgram.SetUniform("material.shininess", 15.0f);
+			shaderProgram.SetUniform("material.specular", vec3(0.8f, 0.8f, 0.8f));
+			shaderProgram.SetUniform("material.shininess", 35.0f);
 			shaderProgram.SetUniformSampler("material.textureMap", 0);
 
 			texture[i].bind(0);
@@ -151,17 +158,6 @@ int main() {
 
 		}
 
-		//render light
-		model = translate(mat4(), lightPos); //* scale(mat4(),(1.0f, 1.0f, 1.0f));
-
-		lightingProgram.Use();
-		lightingProgram.SetUniform("light.ambient", lightColor);
-		lightingProgram.SetUniform("model", model);
-		lightingProgram.SetUniform("view", view);
-		lightingProgram.SetUniform("projection", projection);
-		lightMesh.draw();
-
-		
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);
 		lastTime = currentTime;

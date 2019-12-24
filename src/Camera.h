@@ -15,15 +15,18 @@ public:
 	void setCameraTargetVectors(vec3 newCamTarget);
 	void setLookAt(glm::vec3& target);
 	void setMoveSpeed(float speed);
+	const vec3& getLook() const;
 
 	vec3 getPosition() const;
 	vec3 getTarget();
+
 
 protected:
 	Camera();
 	glm::vec3 mPosition;
 	glm::vec3 mTargetPos;
 	glm::vec3 mUp;
+	glm::vec3 mLook;
 
 
 	//eulers angles (radians)
@@ -61,6 +64,7 @@ public:
 	FirstPersonCamera();
 	virtual void rotateOnCamera(float yaw, float pitch); // degrees, not radians
 	void move(DIRECTION d);
+	void updateCameraTargetVectors();
 	void resetDirection();
 	void ExecuteMove();
 	void ExecuteMove(DIRECTION d);
