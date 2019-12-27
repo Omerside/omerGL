@@ -47,7 +47,8 @@ int main() {
 
 	//creating shader
 	ShaderProgram shaderProgram;
-	shaderProgram.LoadShaders("basic.vert", "lighting_spot.frag");
+	shaderProgram.LoadShaders("basic.vert", "lighting_multifunc.frag");
+
 
 
 	//model positions
@@ -70,16 +71,17 @@ int main() {
 	//Load meshes/textures
 	const int numModels = 4;
 	Mesh mesh[numModels];
-	Mesh lightMesh;
-
+	Mesh sphere;
+	
 	Texture2D texture[numModels];
 
 	mesh[0].loadObj("crate.obj");
 	mesh[1].loadObj("woodCrate.obj");
 	mesh[2].loadObj("robot.obj");
 	mesh[3].loadObj("floor.obj");
-	lightMesh.loadObj("light.obj");
 
+	sphere.loadObj("sphere.obj");
+	
 	//light position
 	vec3 lightPos = cameraObj.getPosition();
 	vec3 lightColor(1.0f, 1.0f, 1.0f);
@@ -88,6 +90,7 @@ int main() {
 	texture[1].loadTexture("woodcrate_diffuse.jpg", true);
 	texture[2].loadTexture("robot_diffuse.jpg", true);
 	texture[3].loadTexture("tile_floor.jpg", true);
+
 
 	double lastTime = glfwGetTime();
 	float angle = 0.0f;
@@ -118,7 +121,7 @@ int main() {
 		cameraObj.ExecuteMove(gYaw, gPitch);
 		//cameraObj.setRadius(gRadius);
 		lightPos = cameraObj.getPosition();
-		//lightPos.y += 0.5f;
+		lightPos.y += 0.5f;
 
 
 		view = cameraObj.getViewMatrix();	
@@ -127,21 +130,42 @@ int main() {
 		//Use the "program", which is our two shaders (vertex and fragment)
 		//glUseProgram(shaderProgram);
 		shaderProgram.Use();
-
-		
-		shaderProgram.SetUniform("view", view);
-		shaderProgram.SetUniform("light.ambient", glm::vec3(0.3f, 0.3f, 0.3f));
-		shaderProgram.SetUniform("light.diffuse", glm::vec3(0.9f, 0.9f, 0.9f));
-		shaderProgram.SetUniform("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-		shaderProgram.SetUniform("light.position", vec3(lightPos));//0.0f, -0.9f, -0.17f));
-		shaderProgram.SetUniform("light.direction", vec3(cameraObj.getLook()));//0.0f, -0.9f, -0.17f));
-		shaderProgram.SetUniform("light.cosInnerCone", cos(radians(25.0f)));
-		shaderProgram.SetUniform("light.cosOuterCone", cos(radians(30.0f)));
-		shaderProgram.SetUniform("light.constant", 1.0f);
-		shaderProgram.SetUniform("light.linear", 0.07f);
-		shaderProgram.SetUniform("light.exponent", 0.017f);
 		shaderProgram.SetUniform("viewPos", cameraObj.getPosition());
-		shaderProgram.SetUniform("projection", projection);
+
+
+		//directional light
+		shaderProgram.SetUniform("view", view);
+		shaderProgram.SetUniform("dirLight.ambient", glm::vec3(0.2f));
+		shaderProgram.SetUniform("dirLight.diffuse", glm::vec3(0.5f));
+		shaderProgram.SetUniform("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+		shaderProgram.SetUniform("dirLight.direction", vec3(0.0f, -0.9f, -0.17f));
+
+		//spot light
+		shaderProgram.SetUniform("spotLight.ambient", glm::vec3(1.0f, 0.1f, 1.0f));
+		shaderProgram.SetUniform("spotLight.diffuse", glm::vec3(100.0f, 10.0f, 1.2f));
+		shaderProgram.SetUniform("spotLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+		shaderProgram.SetUniform("spotLight.position", vec3(lightPos));//0.0f, -0.9f, -0.17f));
+		shaderProgram.SetUniform("spotLight.direction", cameraObj.getLook());
+		shaderProgram.SetUniform("spotLight.cosInnerCone", cos(radians(5.0f)));
+		shaderProgram.SetUniform("spotLight.cosOuterCone", cos(radians(10.0f)));
+		shaderProgram.SetUniform("spotLight.constant", 1.0f);
+		shaderProgram.SetUniform("spotLight.linear", 0.07f);
+		shaderProgram.SetUniform("spotLight.exponent", 0.017f);
+		
+
+		//point light
+		shaderProgram.SetUniform("pointLight.ambient", vec3(1.0f, 1.0f, 1.0f));
+		shaderProgram.SetUniform("pointLight.diffuse", vec3(10.0f));
+		shaderProgram.SetUniform("pointLight.specular", vec3(0.1f, 0.1f, 0.1f));
+		shaderProgram.SetUniform("pointLight.position", vec3(20.0f, 1.0f, 20.0f));
+		shaderProgram.SetUniform("pointLight.constant", 1.0f);
+		shaderProgram.SetUniform("pointLight.linear", 0.07f);
+		shaderProgram.SetUniform("pointLight.exponent", 0.017f);
+
+
+		model = translate(mat4(), vec3(3.0f, 2.0f, 2.0f));
+		shaderProgram.SetUniform("model", model);
+		sphere.draw();
 
 		for (int i = 0; i < numModels; i++) {
 			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
@@ -157,6 +181,7 @@ int main() {
 			texture[i].unbind(0);
 
 		}
+		shaderProgram.SetUniform("projection", projection);
 
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);
@@ -176,9 +201,6 @@ bool initOpenGL() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	
-
-
 
 	gWindow = glfwCreateWindow(gWindowWidth, gWindowHeight, APP_TITLE, NULL, NULL);
 
@@ -258,6 +280,16 @@ void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode)
 		}
 	}
 	else if (key == GLFW_KEY_D && action == GLFW_RELEASE) {
+		if (typeid(cameraObj) == typeid(FirstPersonCamera)) {
+			cameraObj.move(FirstPersonCamera::DIRECTION::NONE);
+		}
+	}
+	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+		if (typeid(cameraObj) == typeid(FirstPersonCamera)) {
+			cameraObj.move(FirstPersonCamera::DIRECTION::UP);
+		}
+	}
+	else if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE) {
 		if (typeid(cameraObj) == typeid(FirstPersonCamera)) {
 			cameraObj.move(FirstPersonCamera::DIRECTION::NONE);
 		}
