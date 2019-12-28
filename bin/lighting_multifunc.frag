@@ -44,9 +44,10 @@ in vec3 FragPos;
 
 out vec4 frag_color;
 
+uniform int pointLightCount;
 uniform DirectionalLight dirLight;
 uniform SpotLight spotLight;
-uniform PointLight pointLight;
+uniform PointLight pointLight[256];
 uniform Material material;
 uniform vec3 viewPos;
 
@@ -93,30 +94,36 @@ void CalcDirectionalLight(){
 }
 
 void CalcPointLight(){
+	int i = 0;
+	while (i < 256 && pointLight[i].diffuse != vec3(0.0f) ){
+		
+		//Ambient
+		mAmbient += (pointLight[i].ambient + dirLight.ambient) * material.ambient * vec3(texel);
 
-	//Ambient
-	mAmbient += (pointLight.ambient + dirLight.ambient) * material.ambient * vec3(texel);
-
-	//Diffuse
-	vec3 normal = normalize(Normal);
-	vec3 lightDirection = normalize(pointLight.position - FragPos);
-	float NdotL = max(dot(normal, lightDirection), 0.0f);
-	mDiffuse += pointLight.diffuse * vec3(texel) * NdotL;
+		//Diffuse
+		vec3 normal = normalize(Normal);
+		vec3 lightDirection = normalize(pointLight[i].position - FragPos);
+		float NdotL = max(dot(normal, lightDirection), 0.0f);
+		mDiffuse += pointLight[i].diffuse * vec3(texel) * NdotL;
 
 
-	//Specular - Blinn-phong components:
-	vec3 viewDirection = normalize(viewPos - FragPos);
-	vec3 halfDirection = normalize(lightDirection + viewDirection);
-	float NdotH = max(dot(normal, halfDirection), 0.0f);
-	mSpecular +=  (pointLight.specular) * material.specular * pow(NdotH, material.shininess);
+		//Specular - Blinn-phong components:
+		vec3 viewDirection = normalize(viewPos - FragPos);
+		vec3 halfDirection = normalize(lightDirection + viewDirection);
+		float NdotH = max(dot(normal, halfDirection), 0.0f);
+		mSpecular +=  (pointLight[i].specular) * material.specular * pow(NdotH, material.shininess);
 
-	//final color
-	float distance = length(pointLight.position - FragPos);
-	float attenuation = 1.0f / (pointLight.constant + pointLight.linear*distance + pointLight.exponent*(distance*distance));
+		//final color
+		float distance = length(pointLight[i].position - FragPos);
+		float attenuation = 1.0f / (pointLight[i].constant + pointLight[i].linear*distance + pointLight[i].exponent*(distance*distance));
 	
-	mDiffuse *= attenuation;
-	//mDiffuse += mDiffuse * attenuation;
-	mSpecular += mSpecular * attenuation;
+		mDiffuse *= attenuation;
+		//mDiffuse += mDiffuse * attenuation;
+		mSpecular += mSpecular * attenuation;
+
+		i++;
+		
+	}
 }
 
 void CalcSpotLight(){

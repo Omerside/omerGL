@@ -64,7 +64,7 @@ public:
 	FirstPersonCamera();
 	virtual void rotateOnCamera(float yaw, float pitch); // degrees, not radians
 	void move(DIRECTION d);
-	void updateCameraTargetVectors();
+	void updateLookVector();
 	void resetDirection();
 	void ExecuteMove();
 	void ExecuteMove(DIRECTION d);

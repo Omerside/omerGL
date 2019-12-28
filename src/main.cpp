@@ -90,7 +90,7 @@ int main() {
 	texture[1].loadTexture("woodcrate_diffuse.jpg", true);
 	texture[2].loadTexture("robot_diffuse.jpg", true);
 	texture[3].loadTexture("tile_floor.jpg", true);
-
+	
 
 	double lastTime = glfwGetTime();
 	float angle = 0.0f;
@@ -99,6 +99,8 @@ int main() {
 	cameraObj.setCameraPositionVectors(10.3f, 1.5f, 10.0f);
 
 	//main loop
+
+	shaderProgram.Use();
 	while (!glfwWindowShouldClose(gWindow)) {
 		showFPS(gWindow);
 		double currentTime = glfwGetTime();
@@ -129,7 +131,8 @@ int main() {
 
 		//Use the "program", which is our two shaders (vertex and fragment)
 		//glUseProgram(shaderProgram);
-		shaderProgram.Use();
+		
+		shaderProgram.SetPointLightCount(2);
 		shaderProgram.SetUniform("viewPos", cameraObj.getPosition());
 
 
@@ -154,18 +157,16 @@ int main() {
 		
 
 		//point light
-		shaderProgram.SetUniform("pointLight.ambient", vec3(1.0f, 1.0f, 1.0f));
-		shaderProgram.SetUniform("pointLight.diffuse", vec3(10.0f));
-		shaderProgram.SetUniform("pointLight.specular", vec3(0.1f, 0.1f, 0.1f));
-		shaderProgram.SetUniform("pointLight.position", vec3(20.0f, 1.0f, 20.0f));
-		shaderProgram.SetUniform("pointLight.constant", 1.0f);
-		shaderProgram.SetUniform("pointLight.linear", 0.07f);
-		shaderProgram.SetUniform("pointLight.exponent", 0.017f);
+		shaderProgram.SetUniform("pointLight[0].ambient", vec3(1.0f, 1.0f, 1.0f));
+		shaderProgram.SetUniform("pointLight[0].diffuse", vec3(5.0f, 0.2f, 5.0f));
+		shaderProgram.SetUniform("pointLight[0].specular", vec3(0.1f, 0.1f, 0.1f));
+		shaderProgram.SetUniform("pointLight[0].position", vec3(20.0f, 1.0f, 20.0f));
+		shaderProgram.SetUniform("pointLight[0].constant", 1.0f);
+		shaderProgram.SetUniform("pointLight[0].linear", 0.07f);
+		shaderProgram.SetUniform("pointLight[0].exponent", 0.017f);
 
 
-		model = translate(mat4(), vec3(3.0f, 2.0f, 2.0f));
-		shaderProgram.SetUniform("model", model);
-		sphere.draw();
+
 
 		for (int i = 0; i < numModels; i++) {
 			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
@@ -181,7 +182,48 @@ int main() {
 			texture[i].unbind(0);
 
 		}
+
+		model = translate(mat4(), vec3(20.0f, 1.0f, 20.0f)) * scale(mat4(), vec3(0.02f));
+		shaderProgram.SetUniform("model", model);
+		shaderProgram.SetUniform("material.ambient", vec3(0.5f));
+		shaderProgram.SetUniform("material.specular", vec3(0.5f));
+		shaderProgram.SetUniform("material.shininess", 35.0f);
+		shaderProgram.SetUniformSampler("material.textureMap", 0);
+
+		sphere.draw();
+
+
+
+		
+		//point light
+
+		shaderProgram.SetUniform("pointLight[1].ambient", vec3(1.0f, 1.0f, 1.0f));
+		shaderProgram.SetUniform("pointLight[1].diffuse", vec3(5.0f, 5.0f, 0.2f));
+		shaderProgram.SetUniform("pointLight[1].specular", vec3(0.1f, 0.1f, 0.1f));
+		shaderProgram.SetUniform("pointLight[1].position", vec3(15.0f, 1.0f, 20.0f));
+		shaderProgram.SetUniform("pointLight[1].constant", 1.0f);
+		shaderProgram.SetUniform("pointLight[1].linear", 0.07f);
+		shaderProgram.SetUniform("pointLight[1].exponent", 0.017f);
+
+		shaderProgram.SetUniform("pointLight[2].ambient", vec3(1.0f, 1.0f, 1.0f));
+		shaderProgram.SetUniform("pointLight[2].diffuse", vec3(0.2f, 5.0f, 5.2f));
+		shaderProgram.SetUniform("pointLight[2].specular", vec3(0.1f, 0.1f, 0.1f));
+		shaderProgram.SetUniform("pointLight[2].position", vec3(20.0f, 1.0f, 15.0f));
+		shaderProgram.SetUniform("pointLight[2].constant", 1.0f);
+		shaderProgram.SetUniform("pointLight[2].linear", 0.07f);
+		shaderProgram.SetUniform("pointLight[2].exponent", 0.017f);
+
+
+		model = translate(mat4(), vec3(15.0f, 1.0f, 15.0f)) * scale(mat4(), vec3(0.02f));
+		shaderProgram.SetUniform("model", model);
+		shaderProgram.SetUniform("material.ambient", vec3(0.5f));
+		shaderProgram.SetUniform("material.specular", vec3(0.5f));
+		shaderProgram.SetUniform("material.shininess", 35.0f);
+		shaderProgram.SetUniformSampler("material.textureMap", 0);
+		sphere.draw();
+
 		shaderProgram.SetUniform("projection", projection);
+		
 
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);
