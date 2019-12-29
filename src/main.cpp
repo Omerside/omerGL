@@ -28,7 +28,7 @@ FirstPersonCamera cameraObj;
 float gYaw = 0.0f;
 float gPitch = 0.0f;
 float gRadius = 0.0f;
-const float MOUSE_SENSITIVITY = 0.15F;
+const float MOUSE_SENSITIVITY = 0.25F;
 
 void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode);
 void glfw_OnFrameBufferSize(GLFWwindow* window, int width, int height);
@@ -73,7 +73,9 @@ int main() {
 	Mesh mesh[numModels];
 	Mesh sphere;
 	
+	
 	Texture2D texture[numModels];
+	Texture2D specularMap;
 
 	mesh[0].loadObj("crate.obj");
 	mesh[1].loadObj("woodCrate.obj");
@@ -81,6 +83,7 @@ int main() {
 	mesh[3].loadObj("floor.obj");
 
 	sphere.loadObj("sphere.obj");
+	specularMap.loadTexture("container2_specular.png", true);
 	
 	//light position
 	vec3 lightPos = cameraObj.getPosition();
@@ -95,7 +98,7 @@ int main() {
 	double lastTime = glfwGetTime();
 	float angle = 0.0f;
 
-	cameraObj.setMoveSpeed(0.025f);
+	cameraObj.setMoveSpeed(0.25f);
 	cameraObj.setCameraPositionVectors(10.3f, 1.5f, 10.0f);
 
 	//main loop
@@ -138,15 +141,15 @@ int main() {
 
 		//directional light
 		shaderProgram.SetUniform("view", view);
-		shaderProgram.SetUniform("dirLight.ambient", glm::vec3(0.2f));
-		shaderProgram.SetUniform("dirLight.diffuse", glm::vec3(0.5f));
-		shaderProgram.SetUniform("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+		shaderProgram.SetUniform("dirLight.ambient", glm::vec3(0.6f));
+		shaderProgram.SetUniform("dirLight.diffuse", glm::vec3(0.6f));
+		shaderProgram.SetUniform("dirLight.specular", glm::vec3(0.0f, 0.0f, 0.0f));
 		shaderProgram.SetUniform("dirLight.direction", vec3(0.0f, -0.9f, -0.17f));
 
 		//spot light
-		shaderProgram.SetUniform("spotLight.ambient", glm::vec3(1.0f, 0.1f, 1.0f));
-		shaderProgram.SetUniform("spotLight.diffuse", glm::vec3(100.0f, 10.0f, 1.2f));
-		shaderProgram.SetUniform("spotLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+		shaderProgram.SetUniform("spotLight.ambient", glm::vec3(10.0f, 10.0f, 1.2f));
+		shaderProgram.SetUniform("spotLight.diffuse", glm::vec3(10.0f, 10.0f, 1.2f));
+		shaderProgram.SetUniform("spotLight.specular", glm::vec3(35.0f));
 		shaderProgram.SetUniform("spotLight.position", vec3(lightPos));//0.0f, -0.9f, -0.17f));
 		shaderProgram.SetUniform("spotLight.direction", cameraObj.getLook());
 		shaderProgram.SetUniform("spotLight.cosInnerCone", cos(radians(5.0f)));
@@ -158,7 +161,7 @@ int main() {
 
 		//point light
 		shaderProgram.SetUniform("pointLight[0].ambient", vec3(1.0f, 1.0f, 1.0f));
-		shaderProgram.SetUniform("pointLight[0].diffuse", vec3(5.0f, 0.2f, 5.0f));
+		shaderProgram.SetUniform("pointLight[0].diffuse", vec3(2.0f, 0.2f, 2.0f));
 		shaderProgram.SetUniform("pointLight[0].specular", vec3(0.1f, 0.1f, 0.1f));
 		shaderProgram.SetUniform("pointLight[0].position", vec3(20.0f, 1.0f, 20.0f));
 		shaderProgram.SetUniform("pointLight[0].constant", 1.0f);
@@ -166,35 +169,6 @@ int main() {
 		shaderProgram.SetUniform("pointLight[0].exponent", 0.017f);
 
 
-
-
-		for (int i = 0; i < numModels; i++) {
-			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
-			shaderProgram.SetUniform("model", model);
-
-			shaderProgram.SetUniform("material.ambient", vec3(0.1f, 0.1f, 0.1f));
-			shaderProgram.SetUniform("material.specular", vec3(0.8f, 0.8f, 0.8f));
-			shaderProgram.SetUniform("material.shininess", 35.0f);
-			shaderProgram.SetUniformSampler("material.textureMap", 0);
-
-			texture[i].bind(0);
-			mesh[i].draw();
-			texture[i].unbind(0);
-
-		}
-
-		model = translate(mat4(), vec3(20.0f, 1.0f, 20.0f)) * scale(mat4(), vec3(0.02f));
-		shaderProgram.SetUniform("model", model);
-		shaderProgram.SetUniform("material.ambient", vec3(0.5f));
-		shaderProgram.SetUniform("material.specular", vec3(0.5f));
-		shaderProgram.SetUniform("material.shininess", 35.0f);
-		shaderProgram.SetUniformSampler("material.textureMap", 0);
-
-		sphere.draw();
-
-
-
-		
 		//point light
 
 		shaderProgram.SetUniform("pointLight[1].ambient", vec3(1.0f, 1.0f, 1.0f));
@@ -223,6 +197,57 @@ int main() {
 		sphere.draw();
 
 		shaderProgram.SetUniform("projection", projection);
+
+		model = translate(mat4(), modelPos[0]) * scale(mat4(), modelScale[0]);
+		shaderProgram.SetUniform("model", model);
+		//shaderProgram.SetUniform("model", model);
+
+
+		shaderProgram.SetUniform("material.ambient", vec3(1.0f, 1.0f, 1.0f));
+		shaderProgram.SetUniform("material.specular", vec3(1.0f, 1.0f, 1.0f));
+		shaderProgram.SetUniform("material.shininess", 90.01f);
+		shaderProgram.SetUniformSampler("material.textureMap", 0);
+		shaderProgram.SetUniformSampler("material.specularMap", 1);
+
+		texture[0].bind(0);
+		specularMap.bind(1);
+
+		mesh[0].draw();
+		texture[0].unbind(0);
+		specularMap.unbind(1);
+
+
+
+		for (int i = 1; i < numModels; i++) {
+			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
+			shaderProgram.SetUniform("model", model);
+
+
+			shaderProgram.SetUniform("material.ambient", vec3(0.5f, 0.5f, 0.5f));
+			shaderProgram.SetUniform("material.specular", vec3(0.4f, 0.4f, 0.4f));
+			shaderProgram.SetUniform("material.shininess", 35.0f);
+			shaderProgram.SetUniformSampler("material.textureMap", 0);
+			shaderProgram.SetUniformSampler("material.specularMap", 0);
+
+			texture[i].bind(0);
+			mesh[i].draw();
+			texture[i].unbind(0);
+
+		}
+
+		model = translate(mat4(), vec3(20.0f, 1.0f, 20.0f)) * scale(mat4(), vec3(0.02f));
+		shaderProgram.SetUniform("model", model);
+		shaderProgram.SetUniform("material.ambient", vec3(0.5f));
+		shaderProgram.SetUniform("material.specular", vec3(0.5f));
+		shaderProgram.SetUniform("material.shininess", 35.0f);
+		shaderProgram.SetUniformSampler("material.textureMap", 0);
+		shaderProgram.SetUniformSampler("material.specularMap", 0);
+
+		sphere.draw();
+
+
+
+
 		
 
 		// Swap front and back buffers
