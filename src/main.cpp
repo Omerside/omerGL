@@ -10,6 +10,7 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "glm/ext.hpp"
+#include "Model.h"
 
 #define  GLM_FORCE_CTOR_INIT
 
@@ -71,7 +72,7 @@ int main() {
 	//Load meshes/textures
 	const int numModels = 4;
 	Mesh mesh[numModels];
-	Mesh sphere;
+
 	
 	
 	Texture2D texture[numModels];
@@ -82,8 +83,8 @@ int main() {
 	mesh[2].loadObj("robot.obj");
 	mesh[3].loadObj("floor.obj");
 
-	sphere.loadObj("sphere.obj");
 	specularMap.loadTexture("container2_specular.png", true);
+	specularMap.isSpecMap = true;
 	
 	//light position
 	vec3 lightPos = cameraObj.getPosition();
@@ -93,7 +94,10 @@ int main() {
 	texture[1].loadTexture("woodcrate_diffuse.jpg", true);
 	texture[2].loadTexture("robot_diffuse.jpg", true);
 	texture[3].loadTexture("tile_floor.jpg", true);
-	
+
+	Model boxes(&shaderProgram, "crate_2.obj");
+	boxes.LoadTextures("crate.jpg", 190.0f, vec3(1.0f), vec3(1.0f));
+	boxes.LoadTextures(specularMap);//65.0f, vec3(0.0f), vec3(0.0f), true);
 
 	double lastTime = glfwGetTime();
 	float angle = 0.0f;
@@ -131,16 +135,21 @@ int main() {
 
 		view = cameraObj.getViewMatrix();	
 		projection = perspective(radians(45.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
+		shaderProgram.SetUniform("projection", projection);
+		shaderProgram.SetUniform("viewPos", cameraObj.getPosition());
+		shaderProgram.SetUniform("view", view);
+
 
 		//Use the "program", which is our two shaders (vertex and fragment)
 		//glUseProgram(shaderProgram);
 		
 		shaderProgram.SetPointLightCount(2);
-		shaderProgram.SetUniform("viewPos", cameraObj.getPosition());
+		
+
 
 
 		//directional light
-		shaderProgram.SetUniform("view", view);
+		
 		shaderProgram.SetUniform("dirLight.ambient", glm::vec3(0.6f));
 		shaderProgram.SetUniform("dirLight.diffuse", glm::vec3(0.6f));
 		shaderProgram.SetUniform("dirLight.specular", glm::vec3(0.0f, 0.0f, 0.0f));
@@ -188,15 +197,10 @@ int main() {
 		shaderProgram.SetUniform("pointLight[2].exponent", 0.017f);
 
 
-		model = translate(mat4(), vec3(15.0f, 1.0f, 15.0f)) * scale(mat4(), vec3(0.02f));
-		shaderProgram.SetUniform("model", model);
-		shaderProgram.SetUniform("material.ambient", vec3(0.5f));
-		shaderProgram.SetUniform("material.specular", vec3(0.5f));
-		shaderProgram.SetUniform("material.shininess", 35.0f);
-		shaderProgram.SetUniformSampler("material.textureMap", 0);
-		sphere.draw();
+		//model = translate(mat4(), vec3(15.0f, 1.0f, 15.0f)) * scale(mat4(), vec3(0.02f));
 
-		shaderProgram.SetUniform("projection", projection);
+
+		
 
 		model = translate(mat4(), modelPos[0]) * scale(mat4(), modelScale[0]);
 		shaderProgram.SetUniform("model", model);
@@ -213,10 +217,13 @@ int main() {
 		specularMap.bind(1);
 
 		mesh[0].draw();
+
 		texture[0].unbind(0);
 		specularMap.unbind(1);
 
 
+		boxes.SetScale(vec3(1.1f));
+		boxes.Draw(vec3(8.0f, 2.0f, 2.0f));
 
 		for (int i = 1; i < numModels; i++) {
 			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
@@ -235,20 +242,6 @@ int main() {
 
 		}
 
-		model = translate(mat4(), vec3(20.0f, 1.0f, 20.0f)) * scale(mat4(), vec3(0.02f));
-		shaderProgram.SetUniform("model", model);
-		shaderProgram.SetUniform("material.ambient", vec3(0.5f));
-		shaderProgram.SetUniform("material.specular", vec3(0.5f));
-		shaderProgram.SetUniform("material.shininess", 35.0f);
-		shaderProgram.SetUniformSampler("material.textureMap", 0);
-		shaderProgram.SetUniformSampler("material.specularMap", 0);
-
-		sphere.draw();
-
-
-
-
-		
 
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);

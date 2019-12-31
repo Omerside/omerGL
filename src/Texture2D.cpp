@@ -68,6 +68,8 @@ bool Texture2D::loadTexture(const string& filename, bool generateMipMaps) {
 	//Unbind the texture.
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	cout << "Loaded texture " << filename << endl;
+
 	return true;
 }
 
