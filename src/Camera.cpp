@@ -3,8 +3,7 @@
 
 
 
-Camera::Camera()
-	:mPosition(glm::vec3(0.0f, 0.0f, 0.0f)),
+Camera::Camera() :
 	mTargetPos(glm::vec3(0.0f, 0.0f, 0.0f)),
 	mUp(0.0f, 1.0f, 0.0f),
 	mYaw(0.0f),

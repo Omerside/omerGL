@@ -1,6 +1,5 @@
 #pragma once
 #ifndef MESH_H
-//REMINDER: NO ifndef MESH_H or #define MESH_H
 #define MESH_H
 
 #include <vector>

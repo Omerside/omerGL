@@ -159,21 +159,3 @@ void ShaderProgram::SetUniform(const GLchar* name, const GLfloat& f) {
 	GLint loc = GetUniformLocation(name);
 	glUniform1f(loc, f);
 }
-
-void ShaderProgram::SetSpotLightCount(unsigned int count) {
-	const GLfloat& spotLightCount = count;
-	GLint loc = GetUniformLocation("spotLightCount");
-	glUniform1f(loc, spotLightCount);
-	
-}
-
-void ShaderProgram::SetPointLightCount(unsigned int count) {
-	const int& pointLightCount = count;
-	GLint loc = GetUniformLocation("pointLightCount");
-	glUniform1f(loc, pointLightCount);
-
-}
-
-void ShaderProgram::SetDirectionalLightCount(unsigned int count) {
-	int DirectionalLightCount = count;
-}

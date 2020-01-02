@@ -5,12 +5,14 @@
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
 #include "glm/gtc/matrix_transform.hpp"
+#include "Model.h"
 #include "ShaderProgram.h"
 #include "Texture2D.h"
 #include "Camera.h"
 #include "Mesh.h"
+#include "Light.h"
 #include "glm/ext.hpp"
-#include "Model.h"
+
 
 #define  GLM_FORCE_CTOR_INIT
 
@@ -96,6 +98,8 @@ int main() {
 	texture[3].loadTexture("tile_floor.jpg", true);
 
 	Model boxes(&shaderProgram, "crate_2.obj");
+
+
 	boxes.LoadTextures("crate.jpg", 190.0f, vec3(1.0f), vec3(1.0f));
 	boxes.LoadTextures(specularMap);//65.0f, vec3(0.0f), vec3(0.0f), true);
 
@@ -104,6 +108,13 @@ int main() {
 
 	cameraObj.setMoveSpeed(0.25f);
 	cameraObj.setCameraPositionVectors(10.3f, 1.5f, 10.0f);
+
+	PointLight pointLights(&shaderProgram, vec3(100.0f), vec3(100.0f), vec3(1.0f), 1.0f, 0.07f, 0.017f);
+	SpotLight spotLights(&shaderProgram, cameraObj.getLook(), vec3(100.0f), vec3(100.0f), vec3(100.0f), vec3(lightPos), cos(radians(5.0f)), cos(radians(10.0f)), 1.0f, 0.07f, 0.017f);
+	SpotLight spotLights2(&shaderProgram, vec3(0.0f, -1.0f, 0.0f), vec3(100.0f), vec3(100.0f), vec3(100.0f), vec3(0.0f, 10.0f, 0.0f), cos(radians(5.0f)), cos(radians(10.0f)), 1.0f, 0.07f, 0.017f);
+	DirectionalLight dirLight(&shaderProgram, vec3(0.0f, -0.9f, -0.17f), vec3(1.0f, 0.1f, 1.0f), vec3(0.6f), vec3(0.0f, 0.0f, 0.0f));
+
+	pointLights.setPosition(vec3(-8.0f, 1.0f, -5.0f));
 
 	//main loop
 
@@ -114,21 +125,16 @@ int main() {
 		double deltaTime = currentTime - lastTime;
 		
 		angle += radians(deltaTime * 50.0f);
-			
-		//lightPos.x = 10.0f * sinf(angle);
-		//lightPos.x -= 0.5f;
+
 
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
 		mat4 model, view, projection;
-
 		
-		//cameraObj.rotateOnCamera(gYaw, gPitch);
-		//cameraObj.rotateOnObject(gYaw, gPitch);
+
 		cameraObj.ExecuteMove(gYaw, gPitch);
-		//cameraObj.setRadius(gRadius);
 		lightPos = cameraObj.getPosition();
 		lightPos.y += 0.5f;
 
@@ -140,72 +146,16 @@ int main() {
 		shaderProgram.SetUniform("view", view);
 
 
-		//Use the "program", which is our two shaders (vertex and fragment)
-		//glUseProgram(shaderProgram);
-		
-		shaderProgram.SetPointLightCount(2);
-		
+		spotLights.setPosition(vec3(lightPos));
+		spotLights.setDirection(cameraObj.getLook());
+		pointLights.draw();
+		dirLight.draw();
+		spotLights.draw();
+		spotLights2.draw();
 
-
-
-		//directional light
-		
-		shaderProgram.SetUniform("dirLight.ambient", glm::vec3(0.6f));
-		shaderProgram.SetUniform("dirLight.diffuse", glm::vec3(0.6f));
-		shaderProgram.SetUniform("dirLight.specular", glm::vec3(0.0f, 0.0f, 0.0f));
-		shaderProgram.SetUniform("dirLight.direction", vec3(0.0f, -0.9f, -0.17f));
-
-		//spot light
-		shaderProgram.SetUniform("spotLight.ambient", glm::vec3(10.0f, 10.0f, 1.2f));
-		shaderProgram.SetUniform("spotLight.diffuse", glm::vec3(10.0f, 10.0f, 1.2f));
-		shaderProgram.SetUniform("spotLight.specular", glm::vec3(35.0f));
-		shaderProgram.SetUniform("spotLight.position", vec3(lightPos));//0.0f, -0.9f, -0.17f));
-		shaderProgram.SetUniform("spotLight.direction", cameraObj.getLook());
-		shaderProgram.SetUniform("spotLight.cosInnerCone", cos(radians(5.0f)));
-		shaderProgram.SetUniform("spotLight.cosOuterCone", cos(radians(10.0f)));
-		shaderProgram.SetUniform("spotLight.constant", 1.0f);
-		shaderProgram.SetUniform("spotLight.linear", 0.07f);
-		shaderProgram.SetUniform("spotLight.exponent", 0.017f);
-		
-
-		//point light
-		shaderProgram.SetUniform("pointLight[0].ambient", vec3(1.0f, 1.0f, 1.0f));
-		shaderProgram.SetUniform("pointLight[0].diffuse", vec3(2.0f, 0.2f, 2.0f));
-		shaderProgram.SetUniform("pointLight[0].specular", vec3(0.1f, 0.1f, 0.1f));
-		shaderProgram.SetUniform("pointLight[0].position", vec3(20.0f, 1.0f, 20.0f));
-		shaderProgram.SetUniform("pointLight[0].constant", 1.0f);
-		shaderProgram.SetUniform("pointLight[0].linear", 0.07f);
-		shaderProgram.SetUniform("pointLight[0].exponent", 0.017f);
-
-
-		//point light
-
-		shaderProgram.SetUniform("pointLight[1].ambient", vec3(1.0f, 1.0f, 1.0f));
-		shaderProgram.SetUniform("pointLight[1].diffuse", vec3(5.0f, 5.0f, 0.2f));
-		shaderProgram.SetUniform("pointLight[1].specular", vec3(0.1f, 0.1f, 0.1f));
-		shaderProgram.SetUniform("pointLight[1].position", vec3(15.0f, 1.0f, 20.0f));
-		shaderProgram.SetUniform("pointLight[1].constant", 1.0f);
-		shaderProgram.SetUniform("pointLight[1].linear", 0.07f);
-		shaderProgram.SetUniform("pointLight[1].exponent", 0.017f);
-
-		shaderProgram.SetUniform("pointLight[2].ambient", vec3(1.0f, 1.0f, 1.0f));
-		shaderProgram.SetUniform("pointLight[2].diffuse", vec3(0.2f, 5.0f, 5.2f));
-		shaderProgram.SetUniform("pointLight[2].specular", vec3(0.1f, 0.1f, 0.1f));
-		shaderProgram.SetUniform("pointLight[2].position", vec3(20.0f, 1.0f, 15.0f));
-		shaderProgram.SetUniform("pointLight[2].constant", 1.0f);
-		shaderProgram.SetUniform("pointLight[2].linear", 0.07f);
-		shaderProgram.SetUniform("pointLight[2].exponent", 0.017f);
-
-
-		//model = translate(mat4(), vec3(15.0f, 1.0f, 15.0f)) * scale(mat4(), vec3(0.02f));
-
-
-		
 
 		model = translate(mat4(), modelPos[0]) * scale(mat4(), modelScale[0]);
 		shaderProgram.SetUniform("model", model);
-		//shaderProgram.SetUniform("model", model);
-
 
 		shaderProgram.SetUniform("material.ambient", vec3(1.0f, 1.0f, 1.0f));
 		shaderProgram.SetUniform("material.specular", vec3(1.0f, 1.0f, 1.0f));
@@ -224,6 +174,7 @@ int main() {
 
 		boxes.SetScale(vec3(1.1f));
 		boxes.Draw(vec3(8.0f, 2.0f, 2.0f));
+		pointLights.draw();
 
 		for (int i = 1; i < numModels; i++) {
 			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);

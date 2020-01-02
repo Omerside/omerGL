@@ -45,10 +45,9 @@ in vec3 FragPos;
 
 out vec4 frag_color;
 
-uniform int pointLightCount;
 uniform DirectionalLight dirLight;
-uniform SpotLight spotLight;
-uniform PointLight pointLight[10];
+uniform SpotLight[10] spotLight;
+uniform PointLight[10] pointLight;
 uniform Material material;
 uniform vec3 viewPos;
 
@@ -68,7 +67,6 @@ void main()
 	output += CalcSpotLight();
 	output += CalcPointLight();
 
-	
 
 	//frag_color = vec4(mAmbient + mDiffuse + mSpecular, 1.0f) * (texel);
 	frag_color = output * (texel);
@@ -78,13 +76,13 @@ void main()
 vec4 CalcDirectionalLight(){
 	
 	//Ambient
-	vec3 mAmbient = dirLight.ambient * material.ambient * vec3(texel );
+	vec3 mAmbient = dirLight.ambient * material.ambient * vec3(texel);
 
 	//Diffuse
 	vec3 normal = normalize(Normal);
 	vec3 lightDirection = normalize(-dirLight.direction);
 	float NdotL = max(dot(normal, lightDirection), 0.0f);
-	vec3 mDiffuse = dirLight.diffuse * vec3(texel )  * NdotL;
+	vec3 mDiffuse = dirLight.diffuse * vec3(texel)  * NdotL;
 
 	//Specular (base)
 	vec3 viewDirection = normalize(viewPos - FragPos);
@@ -105,7 +103,7 @@ vec4 CalcPointLight(){
 	vec3 mSpecular;
 	vec3 mDiffuse;
 
-	while (i < pointLight.length() && pointLight[i].diffuse != vec3(0.0f) ){
+	while (i < pointLight.length() && pointLight[i].diffuse != vec3(0.0f)){
 
 		//Diffuse
 		vec3 lightDirection = normalize(pointLight[i].position - FragPos);
@@ -135,31 +133,42 @@ vec4 CalcPointLight(){
 }
 
 vec4 CalcSpotLight(){
-
-	vec3 lightDirection = normalize(spotLight.position - FragPos);
-	vec3 spotDirection = normalize(spotLight.direction);
-
-	float cosDirection = dot(-lightDirection, spotDirection);
-	float cosIntensity = smoothstep(spotLight.cosOuterCone, spotLight.cosInnerCone, cosDirection);
-
-	//Diffuse
-	vec3 normal = normalize(Normal);
-	float NdotL = max(dot(normal, lightDirection), 0.0);
-	vec3 mDiffuse = (dirLight.diffuse + spotLight.diffuse) * NdotL * vec3(texel );
-
-
-	//Specular - Blinn-phong components:
+	int i = 0;
+	vec3 mSpecular;
+	vec3 mDiffuse;
 	vec3 viewDirection = normalize(viewPos - FragPos);
-	vec3 halfDirection = normalize(lightDirection + viewDirection);
-	float NdotH = max(dot(normal, halfDirection), 0.0f);
-	vec3 mSpecular =  ( spotLight.specular) * material.specular * pow(NdotH, material.shininess) ;
+	vec3 normal = normalize(Normal);
 
-	//final color
-	float distance = length(spotLight.position - FragPos);
-	float attenuation = 1.0f / (spotLight.constant + spotLight.linear*distance + spotLight.exponent*(distance*distance));
+	while (i < spotLight.length() && spotLight[i].diffuse != vec3(0.0f)){
 
-	mDiffuse *= attenuation * cosIntensity;
-	mSpecular *= attenuation * cosIntensity;
+		vec3 lightDirection = normalize(spotLight[i].position - FragPos);
+		vec3 spotDirection = normalize(spotLight[i].direction);
+
+		float cosDirection = dot(-lightDirection, spotDirection);
+		float cosIntensity = smoothstep(spotLight[i].cosOuterCone, spotLight[i].cosInnerCone, cosDirection);
+
+		//Diffuse
+
+		float NdotL = max(dot(normal, lightDirection), 0.0);
+		//vec3 tempDiffuse = (dirLight.diffuse + spotLight[i].diffuse) * NdotL * vec3(texel);
+		vec3 tempDiffuse = (spotLight[i].diffuse) * NdotL * vec3(texel);
+
+
+		//Specular - Blinn-phong components:
+
+		vec3 halfDirection = normalize(lightDirection + viewDirection);
+		float NdotH = max(dot(normal, halfDirection), 0.0f);
+		vec3 tempSpecular =  ( spotLight[i].specular) * material.specular * pow(NdotH, material.shininess) ;
+
+		//final color
+		float distance = length(spotLight[i].position - FragPos);
+		float attenuation = 1.0f / (spotLight[i].constant + spotLight[i].linear*distance + spotLight[i].exponent*(distance*distance));
+
+		mDiffuse += tempDiffuse * attenuation * cosIntensity;
+		mSpecular += tempSpecular * attenuation * cosIntensity;
+
+		i++;
+	}
 
 	return vec4((mDiffuse) + (mSpecular * (vec3(spexel))), 1.0f);
 

@@ -60,7 +60,7 @@ bool Model::LoadTextures(std::string file, float shininess, vec3 specular, vec3 
 			return false;
 		}
 	} else {
-		result = specMap.loadTexture(file, true);
+		result = texture.loadTexture(file, true);
 		if (result){
 			texture.isSpecMap = true;
 			textures.second = texture;
@@ -87,7 +87,7 @@ bool Model::LoadTextures(std::string file, bool isSpecMap) {
 
 		}
 	} else {
-		result = specMap.loadTexture(file, true);
+		result = texture.loadTexture(file, true);
 		if (result) {
 			texture.isSpecMap = false;
 			textures.second = texture;

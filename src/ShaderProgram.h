@@ -27,19 +27,15 @@ public:
 	void SetUniform(const GLchar* name, const glm::vec4& v);
 	void SetUniform(const GLchar* name, const glm::mat4& m);
 	void SetUniformSampler(const GLchar* name, const GLint& slot);
-	void SetSpotLightCount(unsigned int count);
-	void SetPointLightCount(unsigned int count);
-	void SetDirectionalLightCount(unsigned int count);
 	GLuint getProgram()const;
 
 private:
-	GLuint mHandle; // prefix m to denote it's a private class member
+	GLuint mHandle; 
 
 	string FileToString(const string& filename);
 	void CheckCompileErrors(GLuint shader, ShaderType type);
 	GLint GetUniformLocation(const GLchar* name);
 	std::map<string, GLint> mUniformLocations;
-	int spotLightCount, pointLightCount, DirectionalLightCount = 0;
 	
 };
 

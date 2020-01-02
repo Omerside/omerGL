@@ -1,11 +1,12 @@
 #ifndef CAMERA_H
 #define CAMERA_H
+#include "WorldObject.h"
 #include "glm/glm.hpp"
+
 
 using namespace glm;
 
-class Camera
-{
+class Camera : protected WorldObject {
 public:
 	glm::mat4 getViewMatrix() const;
 	virtual void rotate(float yaw, float pitch) {} // degrees, not radians
@@ -23,7 +24,7 @@ public:
 
 protected:
 	Camera();
-	glm::vec3 mPosition;
+	//glm::vec3 mPosition;
 	glm::vec3 mTargetPos;
 	glm::vec3 mUp;
 	glm::vec3 mLook;
