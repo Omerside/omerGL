@@ -25,6 +25,16 @@ Mesh::Mesh()
 {
 }
 
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
+{
+	this->mVertices = vertices;
+	this->mIndices = indices;
+	this->mTextures = textures;
+
+	// now that we have all the required data, set the vertex buffers and its attribute pointers.
+	draw();
+}
+
 
 Mesh::~Mesh()
 {
@@ -177,6 +187,44 @@ void Mesh::draw() {
 	glBindVertexArray(0);
 }
 
+void Mesh::draw(ShaderProgram *shader){
+	// bind appropriate textures
+	unsigned int diffuseNr = 1;
+	unsigned int specularNr = 1;
+	unsigned int normalNr = 1;
+	unsigned int heightNr = 1;
+	for (unsigned int i = 0; i < mTextures.size(); i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
+		// retrieve texture number (the N in diffuse_textureN)
+		string number;
+		string name = mTextures[i].type;
+		if (name == "texture_diffuse")
+			number = std::to_string(diffuseNr++);
+		else if (name == "texture_specular")
+			number = std::to_string(specularNr++); // transfer unsigned int to stream
+		else if (name == "texture_normal")
+			number = std::to_string(normalNr++); // transfer unsigned int to stream
+		else if (name == "texture_height")
+			number = std::to_string(heightNr++); // transfer unsigned int to stream
+
+		// now set the sampler to the correct texture unit
+		//glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
+		shader->SetUniformSampler((name + number).c_str(), i);
+
+		// and finally bind the texture
+		glBindTexture(GL_TEXTURE_2D, mTextures[i].id);
+	}
+
+	// draw mesh
+	glBindVertexArray(mVAO);
+	glDrawElements(GL_TRIANGLES, mIndices.size(), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	// always good practice to set everything back to defaults once configured.
+	glActiveTexture(GL_TEXTURE0);
+}
+
 void Mesh::initBuffers() {
 
 	glGenBuffers(1, &mVBO);					// Generate an empty vertex buffer on the GPU
@@ -185,6 +233,9 @@ void Mesh::initBuffers() {
 
 	glGenVertexArrays(1, &mVAO);				// Tell OpenGL to create new Vertex Array Object
 	glBindVertexArray(mVAO);					// Make it the current one
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(unsigned int), &mIndices[0], GL_STATIC_DRAW);
 
 	//Define position
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), NULL);	// Define a layout for the first vertex buffer "0"
@@ -197,6 +248,13 @@ void Mesh::initBuffers() {
 	//define texture 
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(6 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(2);
+
+	// vertex tangent
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(8 * sizeof(GLfloat)));
+	// vertex bitangent
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(11 * sizeof(GLfloat)));
 
 	glBindVertexArray(0);
 }
