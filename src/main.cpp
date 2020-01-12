@@ -1,23 +1,27 @@
 #include <iostream>
 #include <sstream>
 #pragma comment (lib, "glew32s.lib")
+#pragma comment (lib, "assimp-vc141-mtd.lib")
 #define GLEW_STATIC
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
 #include "glm/gtc/matrix_transform.hpp"
-#include "Model.h"
+#include "ModelObjFormat.h"
 #include "ShaderProgram.h"
 #include "Texture2D.h"
 #include "Camera.h"
 #include "Mesh.h"
 #include "Light.h"
 #include "glm/ext.hpp"
+#include "Model.h"
+#include "Log.h"
 
 
 #define  GLM_FORCE_CTOR_INIT
 
 using namespace glm;
 
+structlog LOGCFG = {};
 const char* APP_TITLE = "OmerGL";
 int gWindowWidth = 1024;
 int gWindowHeight = 768;
@@ -42,10 +46,13 @@ bool initOpenGL();
 
 
 int main() {
+	LOGCFG.level = DEBUG;
 	if (!initOpenGL()) {
 		std::cerr << "GLFW init error - aborting" << std::endl;
 		return -1;
 	}
+	//
+	LOG() << "TEST";
 	
 
 	//creating shader
@@ -91,13 +98,15 @@ int main() {
 	//light position
 	vec3 lightPos = cameraObj.getPosition();
 	vec3 lightColor(1.0f, 1.0f, 1.0f);
-
+	 
 	texture[0].loadTexture("crate.jpg", true);
 	texture[1].loadTexture("woodcrate_diffuse.jpg", true);
 	texture[2].loadTexture("robot_diffuse.jpg", true);
 	texture[3].loadTexture("tile_floor.jpg", true);
 
-	Model boxes(&shaderProgram, "crate_2.obj");
+
+	ModelObjFormat boxes(&shaderProgram, "crate_2.obj");
+	Model stuff("Character Running.dae", &shaderProgram);
 
 
 	boxes.LoadTextures("crate.jpg", 190.0f, vec3(1.0f), vec3(1.0f));
@@ -124,7 +133,7 @@ int main() {
 		double currentTime = glfwGetTime();
 		double deltaTime = currentTime - lastTime;
 		
-		angle += radians(deltaTime * 50.0f);
+		angle += (float) radians(deltaTime * 50.0f);
 
 
 		glfwPollEvents();
@@ -152,6 +161,7 @@ int main() {
 		dirLight.draw();
 		spotLights.draw();
 		spotLights2.draw();
+		
 
 
 		model = translate(mat4(), modelPos[0]) * scale(mat4(), modelScale[0]);
@@ -175,6 +185,7 @@ int main() {
 		boxes.SetScale(vec3(1.1f));
 		boxes.Draw(vec3(8.0f, 2.0f, 2.0f));
 		pointLights.draw();
+		//stuff.Draw();
 
 		for (int i = 1; i < numModels; i++) {
 			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
