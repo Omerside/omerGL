@@ -1,5 +1,7 @@
-#include "Texture2D.h"
+
 #define STB_IMAGE_IMPLEMENTATION
+#include "Texture2D.h"
+#include "Log.h"
 #include "stb_image/stb_image.h"
 #include <iostream>
 using namespace std;
@@ -13,7 +15,7 @@ Texture2D::~Texture2D() {
 	
 }
 
-bool Texture2D::loadTexture(const string& filename, bool generateMipMaps) {
+bool Texture2D::loadTexture(const string& filename, bool generateMipMaps, bool flipImageData) {
 	int width, height, components;
 	unsigned char* imageData = stbi_load(filename.c_str(), &width, &height, &components, STBI_rgb_alpha);
 
@@ -28,17 +30,20 @@ bool Texture2D::loadTexture(const string& filename, bool generateMipMaps) {
 	unsigned char *bottom = NULL;
 	unsigned char temp = 0;
 	int halfHeight = height / 2;
-	for (int row = 0; row < halfHeight; row++)
-	{
-		top = imageData + row * widthInBytes;
-		bottom = imageData + (height - row - 1) * widthInBytes;
-		for (int col = 0; col < widthInBytes; col++)
+
+	if (flipImageData) {
+		for (int row = 0; row < halfHeight; row++)
 		{
-			temp = *top;
-			*top = *bottom;
-			*bottom = temp;
-			top++;
-			bottom++;
+			top = imageData + row * widthInBytes;
+			bottom = imageData + (height - row - 1) * widthInBytes;
+			for (int col = 0; col < widthInBytes; col++)
+			{
+				temp = *top;
+				*top = *bottom;
+				*bottom = temp;
+				top++;
+				bottom++;
+			}
 		}
 	}
 
@@ -68,17 +73,23 @@ bool Texture2D::loadTexture(const string& filename, bool generateMipMaps) {
 	//Unbind the texture.
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	cout << "Loaded texture " << filename << endl;
+	//cout << "Loaded texture " << filename << endl;
 
 	return true;
 }
 
 void Texture2D::bind(GLuint texUnit) {
+	LOG() << "     Binding texture " << mTexture;
 	glActiveTexture(GL_TEXTURE0 + texUnit);
 	glBindTexture(GL_TEXTURE_2D, mTexture);
 }
 
 void Texture2D::unbind(GLuint texUnit) {
+	LOG() << "     Unbinding texture " << mTexture;
 	glActiveTexture(GL_TEXTURE0 + texUnit);
 	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+GLuint Texture2D::getTextureId() {
+	return mTexture;
 }

@@ -6,14 +6,14 @@
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
 #include "glm/gtc/matrix_transform.hpp"
-#include "ModelObjFormat.h"
+#include "Model.h"
 #include "ShaderProgram.h"
 #include "Texture2D.h"
 #include "Camera.h"
 #include "Mesh.h"
 #include "Light.h"
 #include "glm/ext.hpp"
-#include "Model.h"
+//#include "Model.h"
 #include "Log.h"
 
 
@@ -61,6 +61,7 @@ int main() {
 
 
 
+
 	//model positions
 	vec3 modelPos[] = {
 		vec3(-2.5f, 1.0f, 0.0f),
@@ -81,16 +82,18 @@ int main() {
 	//Load meshes/textures
 	const int numModels = 4;
 	Mesh mesh[numModels];
+	Mesh robet;
+	//robet.loadObj("nanosuit.obj");
 
-	
 	
 	Texture2D texture[numModels];
 	Texture2D specularMap;
-
+	
 	mesh[0].loadObj("crate.obj");
 	mesh[1].loadObj("woodCrate.obj");
 	mesh[2].loadObj("robot.obj");
 	mesh[3].loadObj("floor.obj");
+	
 
 	specularMap.loadTexture("container2_specular.png", true);
 	specularMap.isSpecMap = true;
@@ -98,62 +101,75 @@ int main() {
 	//light position
 	vec3 lightPos = cameraObj.getPosition();
 	vec3 lightColor(1.0f, 1.0f, 1.0f);
-	 
+	
 	texture[0].loadTexture("crate.jpg", true);
 	texture[1].loadTexture("woodcrate_diffuse.jpg", true);
 	texture[2].loadTexture("robot_diffuse.jpg", true);
 	texture[3].loadTexture("tile_floor.jpg", true);
+	
+	Texture2D nanosuitTex;
+	nanosuitTex.loadTexture("Character Texture.png", true);
+	Model nanosuit(&shaderProgram, "Character Running.obj");
 
 
-	ModelObjFormat boxes(&shaderProgram, "crate_2.obj");
-	Model stuff("Character Running.dae", &shaderProgram);
 
+	Mesh meshTest;
 
-	boxes.LoadTextures("crate.jpg", 190.0f, vec3(1.0f), vec3(1.0f));
-	boxes.LoadTextures(specularMap);//65.0f, vec3(0.0f), vec3(0.0f), true);
 
 	double lastTime = glfwGetTime();
 	float angle = 0.0f;
 
 	cameraObj.setMoveSpeed(0.25f);
-	cameraObj.setCameraPositionVectors(10.3f, 1.5f, 10.0f);
 
 	PointLight pointLights(&shaderProgram, vec3(100.0f), vec3(100.0f), vec3(1.0f), 1.0f, 0.07f, 0.017f);
 	SpotLight spotLights(&shaderProgram, cameraObj.getLook(), vec3(100.0f), vec3(100.0f), vec3(100.0f), vec3(lightPos), cos(radians(5.0f)), cos(radians(10.0f)), 1.0f, 0.07f, 0.017f);
-	SpotLight spotLights2(&shaderProgram, vec3(0.0f, -1.0f, 0.0f), vec3(100.0f), vec3(100.0f), vec3(100.0f), vec3(0.0f, 10.0f, 0.0f), cos(radians(5.0f)), cos(radians(10.0f)), 1.0f, 0.07f, 0.017f);
-	DirectionalLight dirLight(&shaderProgram, vec3(0.0f, -0.9f, -0.17f), vec3(1.0f, 0.1f, 1.0f), vec3(0.6f), vec3(0.0f, 0.0f, 0.0f));
+	SpotLight spotLights2(&shaderProgram, vec3(0.0f, -1.0f, 0.0f), vec3(50.0f), vec3(100.0f), vec3(100.0f), vec3(0.0f, 10.0f, 0.0f), cos(radians(5.0f)), cos(radians(10.0f)), 1.0f, 0.07f, 0.017f);
+	DirectionalLight dirLight(&shaderProgram, vec3(0.0f, -0.9f, -0.17f), vec3(2.0f, 2.0f, 2.0f), vec3(0.6f), vec3(0.0f, 0.0f, 0.0f));
 
 	pointLights.setPosition(vec3(-8.0f, 1.0f, -5.0f));
 
 	//main loop
 
 	shaderProgram.Use();
+	vec3 initPos = vec3(0.35f, 4.6f, 16.0f);
+	cameraObj.setCameraPositionVectors(initPos);
+	
+
+	vec3 initLookAt = vec3(0.0f, 0.0f, 2.0f);
+	gYaw = -89.9f;
+	cameraObj.setCameraTargetVectors(initLookAt);
+	mat4 model, view, projection;
+	ShaderProgram::gProjection = &projection;
+	ShaderProgram::gView = &view;
+
+	LOG() << "ENTERING MAIN LOOP";
+
 	while (!glfwWindowShouldClose(gWindow)) {
+
 		showFPS(gWindow);
-		double currentTime = glfwGetTime();
-		double deltaTime = currentTime - lastTime;
+
+		//double currentTime = glfwGetTime();
+		//double deltaTime = currentTime - lastTime;
 		
-		angle += (float) radians(deltaTime * 50.0f);
+		//angle += (float) radians(deltaTime * 50.0f);
 
 
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		mat4 model, view, projection;
 		
-
+		//I need to derive the Yaw and Pitch of where I want the camera to initally face!
 		cameraObj.ExecuteMove(gYaw, gPitch);
+
 		lightPos = cameraObj.getPosition();
 		lightPos.y += 0.5f;
 
 
 		view = cameraObj.getViewMatrix();	
 		projection = perspective(radians(45.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
-		shaderProgram.SetUniform("projection", projection);
-		shaderProgram.SetUniform("viewPos", cameraObj.getPosition());
-		shaderProgram.SetUniform("view", view);
-
+		shaderProgram.SetGlobalUniforms();
+		
 
 		spotLights.setPosition(vec3(lightPos));
 		spotLights.setDirection(cameraObj.getLook());
@@ -173,19 +189,8 @@ int main() {
 		shaderProgram.SetUniformSampler("material.textureMap", 0);
 		shaderProgram.SetUniformSampler("material.specularMap", 1);
 
-		texture[0].bind(0);
-		specularMap.bind(1);
-
-		mesh[0].draw();
-
-		texture[0].unbind(0);
-		specularMap.unbind(1);
-
-
-		boxes.SetScale(vec3(1.1f));
-		boxes.Draw(vec3(8.0f, 2.0f, 2.0f));
 		pointLights.draw();
-		//stuff.Draw();
+
 
 		for (int i = 1; i < numModels; i++) {
 			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
@@ -196,7 +201,7 @@ int main() {
 			shaderProgram.SetUniform("material.specular", vec3(0.4f, 0.4f, 0.4f));
 			shaderProgram.SetUniform("material.shininess", 35.0f);
 			shaderProgram.SetUniformSampler("material.textureMap", 0);
-			shaderProgram.SetUniformSampler("material.specularMap", 0);
+			shaderProgram.SetUniformSampler("material.specularMap", 1);
 
 			texture[i].bind(0);
 			mesh[i].draw();
@@ -205,9 +210,12 @@ int main() {
 		}
 
 
+		nanosuit.DrawModel(vec3(8.0f, 2.0f, 2.0f));
+
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);
-		lastTime = currentTime;
+		//lastTime = currentTime;
+	
 	}
 
 	glfwTerminate();

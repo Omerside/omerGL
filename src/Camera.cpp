@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include "Log.h"
 #include "glm/gtx/transform.hpp"
 
 
@@ -10,6 +11,7 @@ Camera::Camera() :
 	mPitch(0.0f),
 	moveSpeed(0.25f)
 {
+	setLookAt(mTargetPos);
 }
 
 void Camera::setCameraPositionVectors(float x, float y, float z) {
@@ -55,6 +57,9 @@ glm::mat4 Camera::getViewMatrix() const {
 
 void Camera::setLookAt(vec3& target) {
 	mTargetPos = target;
+	mLook = normalize(getPosition() - mTargetPos);//target);
+	vec3 mRight = glm::normalize(glm::cross(mLook, vec3(0.0f, 1.0f, 0.0f)));
+	
 }
 
  const vec3& Camera::getLook() const {
@@ -87,7 +92,9 @@ void OrbitCamera::rotateOnObject(float yaw, float pitch) {
 }
 
 FirstPersonCamera::FirstPersonCamera():
-	direction(NONE) {}
+	direction(NONE) {
+
+}
 
 
 void FirstPersonCamera::updateLookVector() {
@@ -126,6 +133,9 @@ void FirstPersonCamera::rotateOnCamera(float yaw, float pitch) {
 }
 
 vec3 FirstPersonCamera::calcTargetPosRotationOnCamera(float yaw, float pitch) {
+	if (yaw == 0.0f && pitch == 0.0f) {
+		return mTargetPos;
+	}
 
 	if (pitch > 89.0f) {
 		pitch = 89.0f;
@@ -142,7 +152,7 @@ vec3 FirstPersonCamera::calcTargetPosRotationOnCamera(float yaw, float pitch) {
 	y = sin(mPitch);
 	z = cos(mPitch)*sin(mYaw);
 
-	return normalize(vec3(x, y, z)) + mPosition;
+	return (normalize(vec3(x, y, z))) + mPosition;
 
 }
 
@@ -214,47 +224,49 @@ void FirstPersonCamera::ExecuteMove(DIRECTION d) {
 
 
 void FirstPersonCamera::ExecuteMove(float yaw, float pitch) {
-	vec3 newTarget = calcTargetPosRotationOnCamera(yaw, pitch);
-	vec3 newPos = mPosition;
-	
-
-	if (direction == NONE) {
-		mTargetPos = newTarget;
-		updateLookVector();
+	if (direction == NONE && yaw == 0.0f && pitch == 0.0f) {
 		return;
-	} else {
+	}
 
-		vec3 cameraDirection = normalize(mPosition - newTarget);
-		vec3 cameraRight = normalize(cross(mUp, cameraDirection));
-		vec3 cameraUp = normalize(cross(cameraDirection, cameraRight));
+
+	mTargetPos = calcTargetPosRotationOnCamera(yaw, pitch);
+	vec3 newPos = mPosition;
+
+
+	// = getPosition();// = calcTargetPosRotationOnCamera(yaw, pitch);//mPosition;
+	vec3 cameraDirection = normalize(mPosition - mTargetPos);
+	vec3 cameraRight = normalize(cross(mUp, cameraDirection));
+	vec3 cameraUp = normalize(cross(cameraDirection, cameraRight));
 	
 
-		if (direction == FORWARD) {
-			newPos = (mPosition -= moveSpeed * (cameraDirection));
+	if (direction == FORWARD) {
+		newPos = (mPosition -= moveSpeed * (cameraDirection));
 
-		}
-		else if (direction == BACK) {
-			newPos = (mPosition += moveSpeed * (cameraDirection));
-
-		}
-		else if (direction == RIGHT) {
-			newPos = (mPosition += moveSpeed * cameraRight);
-			newTarget += moveSpeed * cameraRight;
-
-		}
-		else if (direction == LEFT) {
-			newPos = (mPosition -= moveSpeed * cameraRight);
-			newTarget -= moveSpeed * cameraRight;
-		} 
-		else if (direction == UP) {
-			newPos = (mPosition += moveSpeed * cameraUp);
-			newTarget += moveSpeed * cameraUp;
-		}
-		
-		setCameraPositionVectors(newPos);
-		mTargetPos = newTarget - cameraDirection;
-		updateLookVector();
 	}
+	else if (direction == BACK) {
+		newPos = (mPosition += moveSpeed * (cameraDirection));
+
+	}
+	else if (direction == RIGHT) {
+		newPos = (mPosition += moveSpeed * cameraRight);
+		mTargetPos += moveSpeed * cameraRight;
+
+	}
+	else if (direction == LEFT) {
+		newPos = (mPosition -= moveSpeed * cameraRight);
+		mTargetPos -= moveSpeed * cameraRight;
+	} 
+	else if (direction == UP) {
+		newPos = (mPosition += moveSpeed * cameraUp);
+		mTargetPos += moveSpeed * cameraUp;
+		
+				
+	}
+
+
+	setCameraPositionVectors(newPos);
+	setLookAt(mTargetPos);
+	updateLookVector();
 
 }
 

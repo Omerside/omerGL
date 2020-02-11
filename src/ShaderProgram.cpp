@@ -4,7 +4,10 @@
 #include <sstream>
 #include <glm/gtc/type_ptr.hpp>
 
+
 using namespace std;
+glm::mat4 *ShaderProgram::gProjection;
+glm::mat4 *ShaderProgram::gView;
 
 ShaderProgram::ShaderProgram()
 	: mHandle(0)
@@ -158,4 +161,12 @@ void ShaderProgram::SetUniformSampler(const GLchar* name, const GLint& slot) {
 void ShaderProgram::SetUniform(const GLchar* name, const GLfloat& f) {
 	GLint loc = GetUniformLocation(name);
 	glUniform1f(loc, f);
+}
+
+void ShaderProgram::SetGlobalUniforms() {
+
+	LOG() << "setting View";
+	SetUniform("view", *gView);
+	LOG() << "setting Projection";
+	SetUniform("projection", *gProjection);
 }
