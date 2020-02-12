@@ -41,8 +41,10 @@ void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode)
 void glfw_OnFrameBufferSize(GLFWwindow* window, int width, int height);
 void glfw_onMouseMove(GLFWwindow* window, double posX, double posY);
 
+
 void showFPS(GLFWwindow * window);
 bool initOpenGL();
+
 
 
 int main() {
@@ -148,8 +150,10 @@ int main() {
 
 		showFPS(gWindow);
 
-		//double currentTime = glfwGetTime();
-		//double deltaTime = currentTime - lastTime;
+		double currentTime = glfwGetTime();
+		double deltaTime = currentTime - lastTime;
+
+		LOG() << " --------------------  Delta time: " << deltaTime;
 		
 		//angle += (float) radians(deltaTime * 50.0f);
 
@@ -255,6 +259,9 @@ bool initOpenGL() {
 	glViewport(0, 0, gWindowWidth, gWindowHeight);
 	glEnable(GL_DEPTH_TEST); // render closer vertices last
 
+	// cull back-facing faces to improve performance
+	glEnable(GL_CULL_FACE); 
+	glFrontFace(GL_CCW);
 
 	return true;
 }
