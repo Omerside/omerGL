@@ -7,6 +7,7 @@
 #include "GLFW/glfw3.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "Model.h"
+#include "AnimatedModel.h"
 #include "ShaderProgram.h"
 #include "Texture2D.h"
 #include "Camera.h"
@@ -111,8 +112,8 @@ int main() {
 	
 	Texture2D nanosuitTex;
 	nanosuitTex.loadTexture("Character Texture.png", true);
-	Model nanosuit(&shaderProgram, "Character Running.obj");
-
+	AnimatedModel nanosuit(&shaderProgram, "char_running_v2.dae");
+	//AnimatedModel nanosuitAnimated(&shaderProgram, "Character Running.obj", "Character Running.dae");
 
 
 	Mesh meshTest;
@@ -257,7 +258,9 @@ bool initOpenGL() {
 
 	glClearColor(0.23f, 0.38f, 0.47f, 1.0f);
 	glViewport(0, 0, gWindowWidth, gWindowHeight);
-	glEnable(GL_DEPTH_TEST); // render closer vertices last
+
+	// render closer vertices last
+	glEnable(GL_DEPTH_TEST); 
 
 	// cull back-facing faces to improve performance
 	glEnable(GL_CULL_FACE); 

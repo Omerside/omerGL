@@ -60,16 +60,7 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
 
 	//Create Texture2D objects based on the Texture vector that we receive
 	LOG() << "4) Creating textures based on Texture input vector...";
-	for (int i = 0; i < texturesIn.size(); i++) {
-		Texture2D newTex;
-		newTex.loadTexture(texturesIn[i].path, true, false);
-		newTex.isSpecMap = (texturesIn[i].type == "texture_specular");
-
-		std::pair<Texture2D, Texture> tempPair (newTex, texturesIn[i]);
-		textures.push_back(tempPair);
-		LOG() << "4." << i << ") created texture " <<  texturesIn[i].path;
-		
-	}
+	SetTextures(texturesIn);
 
 
 	// Create and initialize the buffers
@@ -87,6 +78,32 @@ Mesh::~Mesh()
 	glDeleteBuffers(1, &mVBO);
 	glDeleteBuffers(1, &mEBO);
 
+}
+
+void Mesh::SetTextures(std::vector<Texture> texturesIn) {
+	for (int i = 0; i < texturesIn.size(); i++) {
+		Texture2D newTex;
+		newTex.loadTexture(texturesIn[i].path, true, false);
+		newTex.isSpecMap = (texturesIn[i].type == "texture_specular");
+
+		std::pair<Texture2D, Texture> tempPair(newTex, texturesIn[i]);
+		textures.push_back(tempPair);
+		LOG() << "4." << i << ") created texture " << texturesIn[i].path;
+
+	}
+}
+
+void Mesh::PrintBoneHierarchy() {
+	std::for_each(mBones.begin(), mBones.end(), [](Bone &out) {
+		LOG() << "Bone name: " << out.name;
+		LOG() << "   ID:     " << out.id;
+		LOG() << "   Parent: " << out.parentId;
+	});
+}
+
+
+vector<Bone> *Mesh::GetBoneByRef() {
+	return &mBones;
 }
 
 
@@ -255,16 +272,15 @@ bool Mesh::loadTexture(string filePath, bool isSpecMap) {
 
 void Mesh::bindTextures() {
 
-
+	LOG() << "     Binding " << textures.size() << " textures.";
 	for (unsigned int i = 0; i < textures.size(); i++) {
-		
 		if (textures[i].first.isSpecMap == false) {
 			textures[i].first.bind(0);
-
+			LOG() << "       Binding UV map...";
 		}
 		else {
 			textures[i].first.bind(1);
-
+			LOG() << "       Binding spec map...";
 		}
 	}
 }
@@ -274,10 +290,12 @@ void Mesh::unbindTextures() {
 	for (unsigned int i = 0; i < textures.size(); i++) {
 		if (textures[i].first.isSpecMap == false) {
 			textures[i].first.unbind(0);
+			LOG() << "       Binding UV map...";
 
 		}
 		else {
 			textures[i].first.unbind(1);
+			LOG() << "       Binding spec map...";
 
 		}
 	}

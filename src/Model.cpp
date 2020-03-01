@@ -4,6 +4,9 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include <algorithm>
 
+Model::Model(){
+	
+}
 
 Model::Model(ShaderProgram *shaderIn, std::string meshFile, std::string texFile, bool isSpecMap) :
 	shader(shaderIn)
@@ -159,7 +162,6 @@ void  Model::DrawModel(vec3 pos) {
 	shader->SetUniform("model", model);
 
 	int meshSize = meshes.size();
-	LOG() << "5) Attempting to Draw Mesh collection of size: " << meshSize;
 	for (int i = 0; i < meshSize; i++) {
 		LOG() << "5." << i << ") Drawing mesh.";
 		meshes[i].bindTextures();
@@ -227,7 +229,7 @@ void Model::loadModel(string const &path)
 {
 	// read file via ASSIMP
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace );
 	LOG() << "2) imported scene";
 	// check for errors
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
@@ -240,8 +242,16 @@ void Model::loadModel(string const &path)
 
 	// process ASSIMP's root node recursively
 	LOG() << "3) Beginning processing nodes...";
-	processNode(scene->mRootNode, scene);
-	LOG() << " Finished processing nodes" << "Number of meshes processed: " << meshes.size();
+
+	if (scene->HasMaterials()) {
+		LOG() << "Note: This model contains materials. ";
+		if (scene->HasTextures()) {
+			LOG() << "As well as textures. ";
+		}
+	}
+	LOG() << "Number of nodes: " << 1+(scene->mRootNode->mNumChildren);
+	processNode(scene->mRootNode, scene, 0);
+	LOG() << "Number of meshes processed: " << meshes.size();
 
 	for (int i = 0; i < meshes.size(); i++) {
 		meshes[i].initBuffers();
@@ -249,22 +259,55 @@ void Model::loadModel(string const &path)
 }
 
 // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
-void Model::processNode(aiNode *node, const aiScene *scene)
+void Model::processNode(aiNode *node, const aiScene *scene, int parentNodeId)
 {
+	static int sBoneId = 0;
+	sBoneId++;
+
 	// process each mesh located at the current node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		LOG() << "3." << i << ") adding mesh...";
-		meshes.push_back(processMesh(mesh, scene));
+		LOG() << "3." << i << ") adding mesh named: " << mesh->mName.C_Str();
 
+		Mesh tempMesh = processMesh(mesh, scene);
+		if (mesh->HasBones()) {
+
+
+			LOG() << "Number of bones in this mesh: " << mesh->mNumBones;
+			for (unsigned int j = 0; j < mesh->mNumBones; j++) {
+
+				Bone newBone;
+				newBone.name = mesh->mBones[j]->mName.C_Str();
+				tempMesh.mBones.push_back(newBone);
+				
+			}
+			
+		}
+
+
+		tempMesh.mParentMesh = &meshes[parentNodeId];
+		meshes.push_back(tempMesh);
 	}
+
+	
+
 	// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
-	for (unsigned int i = 0; i < node->mNumChildren; i++)
-	{
-		processNode(node->mChildren[i], scene);
+	//If there are no children, we simply assign the node properties and return.
+	//We also take this chance to populate a map of parent-child relationship between the nodes.
+	NodeIDMap newNode;
+	newNode.name = node->mName.C_Str();
+	newNode.id = sBoneId;
+	newNode.parentId = parentNodeId;
+	pNodeIdMap[newNode.name] = newNode;
+	LOG() << "NODE: " << newNode.name << " ID: " << newNode.id << " --> " << newNode.parentId;
+
+
+	//LOG() << "Children count for " << node->mName.C_Str() << ": " << node->mNumChildren;
+	for (int i = 0; i < node->mNumChildren; i++){
+		processNode(node->mChildren[i], scene, newNode.id);
 	}
 
 }
@@ -323,14 +366,16 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 		for (unsigned int j = 0; j < face.mNumIndices; j++)
 			indices.push_back(face.mIndices[j]);
 	}
+
 	// process materials
+	if (!scene->HasMaterials()) {
+		return Mesh(vertices, indices, textures);
+	}
+
 	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-	// we assume a convention for sampler names in the shaders. Each diffuse texture should be named
-	// as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
-	// Same applies to other texture as the following list summarizes:
-	// diffuse: texture_diffuseN
-	// specular: texture_specularN
-	// normal: texture_normalN
+	aiString matName, matString;
+	material->Get(AI_MATKEY_NAME, matString);
+	LOG() << "	Load material name: " << matString.C_Str();
 
 
 	// 1. diffuse maps
@@ -361,6 +406,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 // the required info is returned as a Texture struct.
 vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName)
 {
+	
 	vector<Texture> textures;
 	for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
 	{
@@ -374,9 +420,12 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
 			{
 				textures.push_back(textures_loaded[j]);
 				skip = true; // a texture with the same filepath has already been loaded, continue to next one. (optimization)
+				LOG() << "		Texture " << textures_loaded[j].path.data() << " has already been loaded.";
 				break;
 			}
 		}
+
+
 		if (!skip)
 		{   // if texture hasn't been loaded already, load it
 			Texture texture;
@@ -384,8 +433,10 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
 			texture.type = typeName;
 			texture.path = str.C_Str();
 			textures.push_back(texture);
+			LOG() << "		Loading Texture named: " << texture.path;
 			textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
 		}
+
 	}
 	return textures;
 }

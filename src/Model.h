@@ -11,14 +11,23 @@
 #include <assimp/postprocess.h>
 #include <iostream>
 #include <stb_image/stb_image.h>
+#include <unordered_map> 
 
 using namespace glm;
 
 //Needed for ASSIMP loading
 unsigned int TextureFromFile(const char *path, const string &directory, bool gamma = false);
 
+//Define the unique ID and parent ID of each node
+struct NodeIDMap {
+	string name;
+	int id;
+	int parentId;
+};
+
 class Model {
 public:
+	Model();
 	Model(ShaderProgram *shaderIn, std::string meshFile, std::string texFile, bool isSpecMap = false);
 	Model(ShaderProgram *shaderIn, std::string meshFile);
 	Model(ShaderProgram *shaderIn, Mesh meshIn);
@@ -44,12 +53,12 @@ protected:
 
 	// ASSIMPT FUNCTIONS AND VARS
 
-	void processNode(aiNode *node, const aiScene *scene);
+	void processNode(aiNode *node, const aiScene *scene, int boneId);
 	Mesh processMesh(aiMesh *mesh, const aiScene *scene);
 	vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName);
 
 	string directory;
-	
+	unordered_map<string, NodeIDMap> pNodeIdMap; //This node relationship struct is used to generate the bone hierarchy for the AnimatedModel class.
 	vector<Texture> textures_loaded;
 	//END ASSIMP FUNCTIONS
 
