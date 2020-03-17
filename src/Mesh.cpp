@@ -259,10 +259,8 @@ bool Mesh::loadObj(const std::string& filename) {
 		}
 
 		// Create and initialize the buffers
-		LOG() << "Done";
 		initBuffers();
-		LOG() << "Double done";
-		//printMesh(this);
+
 		return (mLoaded = true);
 	}
 
@@ -382,7 +380,6 @@ void Mesh::initBuffers() {
 
 	glBindVertexArray(mVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, mVBO);		// "bind" or set as the current buffer we are working with
-	LOG() << "number of vertices: " << mNumVertices;
 	glBufferData(GL_ARRAY_BUFFER, mNumVertices * sizeof(Vertex), &mVertices[0], GL_STATIC_DRAW);	// copy the data from CPU to GPU
 
 

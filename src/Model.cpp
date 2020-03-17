@@ -287,7 +287,6 @@ void Model::processNode(aiNode *node, const aiScene *scene, int parentNodeId)
 				Bone newBone;
 				newBone.name = mesh->mBones[j]->mName.C_Str();
 				newBone.invBindPose = aiMatrix4x4ToGlm(&(mesh->mBones[j]->mOffsetMatrix));
-				
 				newBone.vertexWeights = new float[tempMesh.mNumVertices];//(mesh->mBones[j]->mNumWeights)+1];
 
 				//Store vertex weight information in relation to the bone we are looking at
