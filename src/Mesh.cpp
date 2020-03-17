@@ -4,6 +4,24 @@
 #include <fstream>
 #include <algorithm>
 
+//Helper function for struct Bone
+mat4 aiMatrix4x4ToGlm(const aiMatrix4x4* from) {
+	mat4 to;
+
+
+	to[0][0] = (GLfloat)from->a1; to[0][1] = (GLfloat)from->b1;  to[0][2] = (GLfloat)from->c1; to[0][3] = (GLfloat)from->d1;
+	to[1][0] = (GLfloat)from->a2; to[1][1] = (GLfloat)from->b2;  to[1][2] = (GLfloat)from->c2; to[1][3] = (GLfloat)from->d2;
+	to[2][0] = (GLfloat)from->a3; to[2][1] = (GLfloat)from->b3;  to[2][2] = (GLfloat)from->c3; to[2][3] = (GLfloat)from->d3;
+	to[3][0] = (GLfloat)from->a4; to[3][1] = (GLfloat)from->b4;  to[3][2] = (GLfloat)from->c4; to[3][3] = (GLfloat)from->d4;
+
+	return to;
+}
+
+vec3 aiVector3DToGlm(const aiVector3D* from) {
+	return vec3(from->x, from->y, from->z);
+}
+
+
 void printMesh(Mesh *mesh) {
 
 	const void * address = static_cast<const void*>(mesh);
@@ -17,7 +35,8 @@ void printMesh(Mesh *mesh) {
 	myfile.open(filename, std::ios_base::app);
 	myfile << "Writing mesh to a file: " << mesh << "\n" ;
 
-	for (int i = 0; i < mesh->mVertices.size(); i++) {
+	
+	for (int i = 0; i < sizeof(mesh->mVertices) / sizeof(*mesh->mVertices); i++) {
 		myfile << "pos: " << mesh->mVertices[i].position.x << " " << mesh->mVertices[i].position.y << " " << mesh->mVertices[i].position.z << "\n";
 		myfile << "norm: " << mesh->mVertices[i].normal.x << " " << mesh->mVertices[i].normal.y << " " << mesh->mVertices[i].normal.z << "\n";
 		myfile << "tex: " << mesh->mVertices[i].texCoords.x << " " << mesh->mVertices[i].texCoords.y << "\n";
@@ -51,7 +70,7 @@ Mesh::Mesh()
 }
 
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> texturesIn)
+Mesh::Mesh(Vertex* vertices, std::vector<unsigned int> indices, std::vector<Texture> texturesIn)
 {
 	mVertices = vertices;
 	mIndices = indices;
@@ -95,9 +114,12 @@ void Mesh::SetTextures(std::vector<Texture> texturesIn) {
 
 void Mesh::PrintBoneHierarchy() {
 	std::for_each(mBones.begin(), mBones.end(), [](Bone &out) {
-		LOG() << "Bone name: " << out.name;
-		LOG() << "   ID:     " << out.id;
-		LOG() << "   Parent: " << out.parentId;
+		LOG() << "Bone name:  " << out.name;
+		LOG() << "   ID:      " << out.id;
+		LOG() << "   Parent:  " << out.parentId;
+		std::for_each(out.childrenId.begin(), out.childrenId.end(), [](int outChild) {
+			LOG() << "   Children:" << outChild;
+		});
 	});
 }
 
@@ -212,7 +234,10 @@ bool Mesh::loadObj(const std::string& filename) {
 		// Close the file
 		fin.close();
 
-
+		mNumVertices = vertexIndices.size();
+		mVertices = new Vertex[mNumVertices];
+		
+		LOG() << "attempting to assign vertices in mesh...";
 		// For each vertex of each triangle
 		for (unsigned int i = 0; i < vertexIndices.size(); i++)
 		{
@@ -230,11 +255,13 @@ bool Mesh::loadObj(const std::string& filename) {
 				meshVertex.texCoords = tempUVs[uvIndices[i] - 1];
 			}
 
-			mVertices.push_back(meshVertex);
+			mVertices[i] = (meshVertex);
 		}
 
 		// Create and initialize the buffers
+		LOG() << "Done";
 		initBuffers();
+		LOG() << "Double done";
 		//printMesh(this);
 		return (mLoaded = true);
 	}
@@ -302,6 +329,16 @@ void Mesh::unbindTextures() {
 }
 
 
+void Mesh::TransformVertices(mat4 trans) {
+	std::for_each(&mVertices[0], &mVertices[mNumVertices-1], [trans](Vertex &ver) {
+		ver.position = vec3(trans * vec4((ver.position), 1));
+		ver.normal = vec3(trans * vec4((ver.normal), 1));
+		ver.tangent = vec3(trans * vec4((ver.tangent), 1));
+		ver.bitangent = vec3(trans * vec4((ver.bitangent), 1));
+	});
+}
+
+
 void Mesh::draw() {
 	if (!mLoaded) { 
 		LOG(ERROR) << "Mesh not loaded.";
@@ -316,11 +353,11 @@ void Mesh::draw() {
 
 		LOG() << "     - Drawing " << mIndices.size() << " indices.";
 		glDrawElements(GL_TRIANGLES, mIndices.size(), GL_ELEMENT_ARRAY_BUFFER, 0);
-		glDrawArrays(GL_TRIANGLES, 0, mVertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, mNumVertices);
 	}
 	else {
-		LOG() << "     - Drawing " << mVertices.size() << " vertices.";
-		glDrawArrays(GL_TRIANGLES, 0, mVertices.size());
+		LOG() << "     - Drawing " << mNumVertices << " vertices.";
+		glDrawArrays(GL_TRIANGLES, 0, mNumVertices);
 	}
 
 	/*
@@ -345,7 +382,8 @@ void Mesh::initBuffers() {
 
 	glBindVertexArray(mVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, mVBO);		// "bind" or set as the current buffer we are working with
-	glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(Vertex), &mVertices[0], GL_STATIC_DRAW);	// copy the data from CPU to GPU
+	LOG() << "number of vertices: " << mNumVertices;
+	glBufferData(GL_ARRAY_BUFFER, mNumVertices * sizeof(Vertex), &mVertices[0], GL_STATIC_DRAW);	// copy the data from CPU to GPU
 
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
@@ -375,38 +413,3 @@ void Mesh::initBuffers() {
 	LOG() << "	VAO: " << mVAO << " VBO: " << mVBO << " EBO: " << mEBO;
 }
 
-void Mesh::setupMesh()
-{
-	glGenVertexArrays(1, &mVAO);
-	glGenBuffers(1, &mVBO);
-	glGenBuffers(1, &mEBO);
-
-	glBindVertexArray(mVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, mVBO);
-
-	glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(Vertex), &mVertices[0], GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(unsigned int), &mIndices[0], GL_STATIC_DRAW);
-
-
-	// set the vertex attribute pointers
-	// vertex Positions
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-	// vertex normals
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-	// vertex texture coords
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
-	// vertex tangent
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
-	// vertex bitangent
-	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
-
-
-	glBindVertexArray(0);
-}

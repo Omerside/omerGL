@@ -9,6 +9,9 @@
 #include "Log.h"
 #include "glm/gtc/quaternion.hpp"
 #include "glm/gtx/quaternion.hpp"
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <assimp/Importer.hpp>
 #include <vector>
 #include <string>
 
@@ -34,14 +37,15 @@ struct Texture {
 
 struct BonePose
 {
-	quat rotation;
-	vec3 transformation;
-	float scale;
+	quat rotation = quat(0, 0, 0, 1);
+	mat4 transformation;
+	float scale = 1;
 };
 
 struct Bone
 {
-	mat4x3 invBindPose; // inverse bind pose
+	float* vertexWeights;
+	mat4 invBindPose; // inverse bind pose
 	string name; // human-friendly name
 	int id; // identifying joint number
 	int parentId; //  ID of parent joint
@@ -49,13 +53,15 @@ struct Bone
 	BonePose pose;
 };
 
-
+//helper functions
+mat4 aiMatrix4x4ToGlm(const aiMatrix4x4* from);
+vec3 aiVector3DToGlm(const aiVector3D* from);
 
 class Mesh
 {
 public:
 	Mesh();
-	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+	Mesh(Vertex* vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
 	~Mesh();
 	bool loadObj(const std::string& filename);
 	bool loadTexture(string filePath, bool isSpecMap);
@@ -67,15 +73,18 @@ public:
 	void PrintBoneHierarchy();
 	vector<Bone>* GetBoneByRef();
 
-	std::vector<Vertex> mVertices;
+	Vertex* mVertices;
+	uint mNumVertices;
+
 	std::vector<unsigned int> mIndices;
 	int jointId;
 	
 
 private:
 	friend class Model;
-	void setupMesh();
+
 	bool mLoaded;
+	void TransformVertices(mat4 trans);
 	std::vector<std::pair<Texture2D, Texture>> textures;
 	std::vector<Texture> mTextures;
 	GLuint mVBO, mVAO, mEBO;

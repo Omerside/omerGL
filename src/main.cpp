@@ -215,7 +215,7 @@ int main() {
 		}
 
 
-		nanosuit.DrawModel(vec3(8.0f, 2.0f, 2.0f));
+		nanosuit.DrawModel(vec3(8.0f, 2.0f, 2.0f), -1);
 
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);

@@ -254,6 +254,7 @@ void Model::loadModel(string const &path)
 	LOG() << "Number of meshes processed: " << meshes.size();
 
 	for (int i = 0; i < meshes.size(); i++) {
+		
 		meshes[i].initBuffers();
 	}
 }
@@ -271,18 +272,30 @@ void Model::processNode(aiNode *node, const aiScene *scene, int parentNodeId)
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 		LOG() << "3." << i << ") adding mesh named: " << mesh->mName.C_Str();
+		
 
 		Mesh tempMesh = processMesh(mesh, scene);
-		if (mesh->HasBones()) {
+		tempMesh.mNumVertices = mesh->mNumVertices;
 
+		//Process bones if they exist
+		if (mesh->HasBones()) {
+			tempMesh.mBonePose.transformation = aiMatrix4x4ToGlm(&(node->mTransformation));
 
 			LOG() << "Number of bones in this mesh: " << mesh->mNumBones;
 			for (unsigned int j = 0; j < mesh->mNumBones; j++) {
 
 				Bone newBone;
 				newBone.name = mesh->mBones[j]->mName.C_Str();
-				tempMesh.mBones.push_back(newBone);
+				newBone.invBindPose = aiMatrix4x4ToGlm(&(mesh->mBones[j]->mOffsetMatrix));
 				
+				newBone.vertexWeights = new float[tempMesh.mNumVertices];//(mesh->mBones[j]->mNumWeights)+1];
+
+				//Store vertex weight information in relation to the bone we are looking at
+				for (unsigned int k = 0; k < (mesh->mBones[j]->mNumWeights); k++) {
+					newBone.vertexWeights[mesh->mBones[j]->mWeights->mVertexId] = mesh->mBones[j]->mWeights->mWeight;
+				}
+
+				tempMesh.mBones.push_back(newBone);
 			}
 			
 		}
@@ -290,6 +303,7 @@ void Model::processNode(aiNode *node, const aiScene *scene, int parentNodeId)
 
 		tempMesh.mParentMesh = &meshes[parentNodeId];
 		meshes.push_back(tempMesh);
+		meshesMap[mesh->mName.C_Str()] = &meshes.back();
 	}
 
 	
@@ -315,7 +329,8 @@ void Model::processNode(aiNode *node, const aiScene *scene, int parentNodeId)
 Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 {
 	// data to fill
-	vector<Vertex> vertices;
+	
+	Vertex* vertices = new Vertex[mesh->mNumVertices];
 	vector<unsigned int> indices;
 	vector<Texture> textures;
 
@@ -356,7 +371,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 		vector.y = mesh->mBitangents[i].y;
 		vector.z = mesh->mBitangents[i].z;
 		vertex.bitangent = vector;
-		vertices.push_back(vertex);
+		vertices[i] = vertex;
 	}
 	// now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
 	for (unsigned int i = 0; i < mesh->mNumFaces; i++)

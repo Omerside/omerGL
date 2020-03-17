@@ -38,6 +38,7 @@ public:
 	void Draw(vec3 pos);
 	void DrawModel(vec3 pos);
 	vector<Mesh> meshes;
+	map<string, Mesh*> meshesMap;
 
 	//ASSIMP FUNCTIONS
 	void loadModel(string  const &path);
@@ -64,7 +65,7 @@ protected:
 
 	ShaderProgram *shader;
 	std::pair<Texture2D, Texture2D> textures; //texture map, specular map
-	Mesh mMesh;
+	Mesh mMesh; //used in an older file processing function
 };
 
 #endif
