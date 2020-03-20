@@ -37,8 +37,9 @@ public:
 	void SetScale(vec3 scaleIn);
 	void Draw(vec3 pos);
 	void DrawModel(vec3 pos);
-	vector<Mesh> meshes;
-	map<string, Mesh*> meshesMap;
+	int GetNodeCount() { return nodeCount; }
+
+	
 
 	//ASSIMP FUNCTIONS
 	void loadModel(string  const &path);
@@ -48,8 +49,11 @@ public:
 	~Model();
 
 protected:
+	
+
 	bool LoadTextures(std::string file, bool isSpecMap = false);
 	bool LoadObjMeshes(std::string file);
+
 	vec3 scale = vec3(1.0f);
 
 	// ASSIMPT FUNCTIONS AND VARS
@@ -57,15 +61,18 @@ protected:
 	void processNode(aiNode *node, const aiScene *scene, int boneId);
 	Mesh processMesh(aiMesh *mesh, const aiScene *scene);
 	vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName);
-
+	vector<Mesh> meshes;
 	string directory;
-	unordered_map<string, NodeIDMap> pNodeIdMap; //This node relationship struct is used to generate the bone hierarchy for the AnimatedModel class. name->node.
-	vector<Texture> textures_loaded;
-	//END ASSIMP FUNCTIONS
 
+	unordered_map<string, NodeIDMap> pNodeIdMap; //This node relationship struct is used to generate the bone hierarchy for the AnimatedModel class. name->node.
+	int nodeCount = 0; // quick access for pNodeIdMap count of objects.
+
+	vector<Texture> textures_loaded;
+	map<string, Mesh*> meshesMap;
 	ShaderProgram *shader;
 	std::pair<Texture2D, Texture2D> textures; //texture map, specular map
 	Mesh mMesh; //used in an older file processing function
+
 };
 
 #endif

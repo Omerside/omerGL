@@ -3,7 +3,7 @@
 #include "Model.h"
 
 using namespace glm;
-const int MAX_NUM_OF_BONES = 200;
+
 
 struct Skeleton
 {
@@ -27,6 +27,7 @@ public:
 private:
 	void processAnimNodes(aiAnimation *node, const aiScene *scene);
 	void AssignBonesHierarchyByNodes();
+	void PopulateBonesArrayAndMap(); // Populate mBonesAr based on the IDs mentioned in mBones
 
 	
 	Skeleton skel;

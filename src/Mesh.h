@@ -47,7 +47,7 @@ struct Bone
 	float* vertexWeights;
 	mat4 invBindPose; // inverse bind pose
 	string name; // human-friendly name
-	int id; // identifying joint number
+	int id = -1; // identifying joint number
 	int parentId; //  ID of parent joint
 	vector<int> childrenId;  // list of all children IDs
 	BonePose pose;
@@ -56,6 +56,7 @@ struct Bone
 //helper functions
 mat4 aiMatrix4x4ToGlm(const aiMatrix4x4* from);
 vec3 aiVector3DToGlm(const aiVector3D* from);
+const int MAX_NUM_OF_BONES = 100;
 
 class Mesh
 {
@@ -71,26 +72,29 @@ public:
 	void initBuffers();
 	void SetTextures(std::vector<Texture> texturesIn);
 	void PrintBoneHierarchy();
-	vector<Bone>* GetBoneByRef();
 
-	Vertex* mVertices;
-	uint mNumVertices;
-
-	std::vector<unsigned int> mIndices;
-	int jointId;
 	
 
 private:
 	friend class Model;
+	friend class AnimatedModel;
 
-	bool mLoaded;
 	void TransformVertices(mat4 trans);
+	void StoreBoneById(Bone* bone, int id);
+	void CleanUnorderedBoneArrays() {  mBones.clear(); }
+	
+	Vertex* mVertices;
+	uint mNumVertices;
+	vector<unsigned int> mIndices;
 	std::vector<std::pair<Texture2D, Texture>> textures;
 	std::vector<Texture> mTextures;
 	GLuint mVBO, mVAO, mEBO;
 	Mesh *mParentMesh;
-	vector<Bone> mBones;
+	vector<Bone> mBones; //unordered stack of bones
+	Bone* mBonesArrOrdered[MAX_NUM_OF_BONES]; // refers to bone objects by their ID
 	BonePose mBonePose;
+	map<string, Bone*> bonesMap;
+	bool mLoaded;
 };
 
 #endif

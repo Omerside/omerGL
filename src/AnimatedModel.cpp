@@ -12,8 +12,13 @@ AnimatedModel::AnimatedModel(ShaderProgram *shaderIn, std::string animationFile)
 	//Assign bone hierarchy for animation
 	AssignBonesHierarchyByNodes();
 
+	//populate map and array for easier processing and faster access, respectively.
+	PopulateBonesArrayAndMap();
+
 	//Load animation data including bones, poses. 
 	LoadAnimationData(animationFile);
+
+	LOG() << "Animated model loaded.";
 
 }
 
@@ -42,25 +47,45 @@ void AnimatedModel::LoadAnimationData(string const &path){
 		return;
 	}
 
+
+	LOG() << "Beginning to load animations.";
+
 	aiAnimation** animations = scene->mAnimations;
 	for (unsigned int i = 0; i < scene->mNumAnimations; i++) {
 		processAnimNodes(animations[i], scene);
+
 	}
 
 	LOG() << "Finished loading animations.";
+
+
 }
 
 void AnimatedModel::processAnimNodes(aiAnimation *animation, const aiScene *scene)
 {
 
-	aiNodeAnim** channels = animation->mChannels;
+	aiNodeAnim** nodeChannels = animation->mChannels;
 
-	// process each node animation channels.
-	for (unsigned int i = 0; i < animation->mNumChannels; i++)
-	{
-		LOG() << "Node name is: " << channels[i]->mNodeName.C_Str();
-		vec3 value = aiVector3DToGlm(&channels[i]->mPositionKeys->mValue);
+
+	for (unsigned int i = 0; i < animation->mNumChannels; i++){
+		LOG() << "Node animation channel name is: " << nodeChannels[i]->mNodeName.C_Str();
+		LOG() << "Name of Bone value (MAP)   : " << meshes[0].bonesMap.at(nodeChannels[i]->mNodeName.C_Str())->name;
+		//LOG() << "ID of Bone value: " << meshes[0].bonesMap.at(nodeChannels[i]->mNodeName.C_Str())->id;
+		//LOG() << "Bone name at this ID: " << meshes[0].mBonesAr[meshes[0].bonesMap.at(nodeChannels[i]->mNodeName.C_Str())->id]->name;
+
+		vec3 value = aiVector3DToGlm(&nodeChannels[i]->mPositionKeys->mValue);
+
 	}
+
+	
+	/*
+	for (unsigned int i = 0; i < animation->mNumMeshChannels; i++){
+
+		LOG() << "Mesh animation channel name is: " << meshChannels[i]->mName.C_Str();
+		
+	}
+	*/
+
 
 	/**Transform vertices:
 	aiMatrix4x4 tempMatrix = node->mTransformation;// .RotationX(0.4, m);
@@ -72,36 +97,35 @@ void AnimatedModel::processAnimNodes(aiAnimation *animation, const aiScene *scen
 void AnimatedModel::AssignBonesHierarchyByNodes()
 {
 	LOG() << "Assigning bone hierarchy...";
-	vector<Bone>* bones;
 	for (int i = 0; i < meshes.size(); i++) {
-		bones = meshes[i].GetBoneByRef();
-		
+
+		//bones = &(meshes[i].mBones);		
 		//childrenIdArray uses the ID of the bone as its location in the array
 		vector<int>* childrenIdArray = new vector<int>[MAX_NUM_OF_BONES];
-		
-		
-		for (int j = 0; j < bones->size(); j++) {
-			//define bone id, parent ID
-			(*bones)[j].id = pNodeIdMap[((*bones)[j]).name].id;
-			(*bones)[j].parentId = pNodeIdMap[((*bones)[j]).name].parentId;
-			
-			//Store whose child this bone is for later assignment of childrenId array
-			childrenIdArray[(*bones)[j].parentId].push_back((*bones)[j].id);
 
-			//also take the opportunity to define the bones in the skeleton, now that we know the IDs
-			skel.bones[(*bones)[j].id] = &(*bones)[j];
-			skel.boneCount++;
+		
+		for (int j = 0; j < meshes[i].mBones.size(); j++) {
+			//define bone id, parent ID
+			meshes[i].mBones[j].id = pNodeIdMap[(meshes[i].mBones[j]).name].id;
+			
+			//LOG() << "size of bones map: " << (*bones)[j].id;
+
+			meshes[i].mBones[j].parentId = pNodeIdMap[(meshes[i].mBones[j]).name].parentId;
+			
+			//Record who the parent of this bone is. This will be used below to generate a map of children for each bone.
+			childrenIdArray[meshes[i].mBones[j].parentId].push_back(meshes[i].mBones[j].id);
+
 		}
 		
-		for (int j = 0; j < bones->size(); j++) {
+		for (int j = 0; j < meshes[i].mBones.size(); j++) {
 			//Assign list of children to bone based on ID
-			(*bones)[j].childrenId = childrenIdArray[(*bones)[j].id];
+			meshes[i].mBones[j].childrenId = childrenIdArray[meshes[i].mBones[j].id];
 		}
 		
 		meshes[i].PrintBoneHierarchy();
 
-		delete[] childrenIdArray;
-		
+		//delete[] childrenIdArray;
+
 	}
 
 }
@@ -130,4 +154,24 @@ void  AnimatedModel::DrawModel(vec3 pos, int frame) {
 	}
 
 	
+}
+
+/*Requires that mBones is populated for all meshes*/
+void AnimatedModel::PopulateBonesArrayAndMap() {
+	for (int i = 0; i < meshes.size(); i++) {
+
+		for (int j = 0; j < meshes[i].mBones.size(); j++) {
+
+			//meshes[i].mBonesArrOrdered[meshes[i].mBones[j].id] = (meshes[i].mBones[j]);
+			meshes[i].StoreBoneById(&(meshes[i].mBones[j]), meshes[i].mBones[j].id);
+			meshes[i].bonesMap.insert(pair<string, Bone*>(meshes[i].mBones[j].name, (meshes[i].mBonesArrOrdered[meshes[i].mBones[j].id])));
+
+		}
+
+		//delete me:
+		LOG() << "iterating over bones in ordered bone array size:" << meshes[i].mBones.size();
+		for (int j = 0; j < meshes[i].mBones.size(); j++) {
+			LOG() << "Iterator: " << meshes[i].mBones[j].id << " name: " << meshes[i].mBonesArrOrdered[meshes[i].mBones[j].id]->name << " ID: " << meshes[i].mBonesArrOrdered[meshes[i].mBones[j].id]->id;
+		}
+	}
 }

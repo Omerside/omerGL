@@ -114,7 +114,7 @@ int main() {
 	nanosuitTex.loadTexture("Character Texture.png", true);
 	AnimatedModel nanosuit(&shaderProgram, "char_running_v2.dae");
 	//AnimatedModel nanosuitAnimated(&shaderProgram, "Character Running.obj", "Character Running.dae");
-
+	LOG() << "FINISHED LOADING MODELS";
 
 	Mesh meshTest;
 

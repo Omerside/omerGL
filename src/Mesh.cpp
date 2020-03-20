@@ -22,32 +22,6 @@ vec3 aiVector3DToGlm(const aiVector3D* from) {
 }
 
 
-void printMesh(Mesh *mesh) {
-
-	const void * address = static_cast<const void*>(mesh);
-	std::stringstream ss;
-	ss << address;
-	std::string stringAddress = ss.str();
-
-	ofstream myfile;
-	string filename = "2mesh_output_" + stringAddress + ".txt";
-
-	myfile.open(filename, std::ios_base::app);
-	myfile << "Writing mesh to a file: " << mesh << "\n" ;
-
-	
-	for (int i = 0; i < sizeof(mesh->mVertices) / sizeof(*mesh->mVertices); i++) {
-		myfile << "pos: " << mesh->mVertices[i].position.x << " " << mesh->mVertices[i].position.y << " " << mesh->mVertices[i].position.z << "\n";
-		myfile << "norm: " << mesh->mVertices[i].normal.x << " " << mesh->mVertices[i].normal.y << " " << mesh->mVertices[i].normal.z << "\n";
-		myfile << "tex: " << mesh->mVertices[i].texCoords.x << " " << mesh->mVertices[i].texCoords.y << "\n";
-
-	}
-
-	myfile.close();
-	return;
-}
-
-
 std::vector<std::string> split(std::string s, std::string t)
 {
 	std::vector<std::string> res;
@@ -123,10 +97,6 @@ void Mesh::PrintBoneHierarchy() {
 	});
 }
 
-
-vector<Bone> *Mesh::GetBoneByRef() {
-	return &mBones;
-}
 
 
 //-----------------------------------------------------------------------------
@@ -334,6 +304,10 @@ void Mesh::TransformVertices(mat4 trans) {
 		ver.tangent = vec3(trans * vec4((ver.tangent), 1));
 		ver.bitangent = vec3(trans * vec4((ver.bitangent), 1));
 	});
+}
+
+void Mesh::StoreBoneById(Bone* bone, int id) {
+	this->mBonesArrOrdered[id] = bone;
 }
 
 

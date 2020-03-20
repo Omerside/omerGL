@@ -277,9 +277,11 @@ void Model::processNode(aiNode *node, const aiScene *scene, int parentNodeId)
 		Mesh tempMesh = processMesh(mesh, scene);
 		tempMesh.mNumVertices = mesh->mNumVertices;
 
+
 		//Process bones if they exist
 		if (mesh->HasBones()) {
 			tempMesh.mBonePose.transformation = aiMatrix4x4ToGlm(&(node->mTransformation));
+			LOG() << "temp mesh's mBoneArray size is: " << (mesh->mNumBones + 1);
 
 			LOG() << "Number of bones in this mesh: " << mesh->mNumBones;
 			for (unsigned int j = 0; j < mesh->mNumBones; j++) {
@@ -288,13 +290,24 @@ void Model::processNode(aiNode *node, const aiScene *scene, int parentNodeId)
 				newBone.name = mesh->mBones[j]->mName.C_Str();
 				newBone.invBindPose = aiMatrix4x4ToGlm(&(mesh->mBones[j]->mOffsetMatrix));
 				newBone.vertexWeights = new float[tempMesh.mNumVertices];//(mesh->mBones[j]->mNumWeights)+1];
+				//newBone.id = j;
 
 				//Store vertex weight information in relation to the bone we are looking at
 				for (unsigned int k = 0; k < (mesh->mBones[j]->mNumWeights); k++) {
 					newBone.vertexWeights[mesh->mBones[j]->mWeights->mVertexId] = mesh->mBones[j]->mWeights->mWeight;
 				}
 
+				//LOG() << "PUSHED BACK BONE ID " << j;
+				
+				
 				tempMesh.mBones.push_back(newBone);
+				//tempMesh.mBonesArrUnordered[j] = newBone;
+				//LOG() << tempMesh.mBones.back().name;
+				//tempMesh.bonesMap.insert(pair<string, Bone*>(newBone.name, &(tempMesh.mBones[tempMesh.mBones.size()-1])));
+				
+
+				//LOG() << "INSERTED BONE " << newBone.name << " TO ID " << newBone.id;
+				//LOG() << "SEE: " << tempMesh.mBonesAr[newBone.id].name;
 			}
 			
 		}
@@ -302,6 +315,15 @@ void Model::processNode(aiNode *node, const aiScene *scene, int parentNodeId)
 
 		tempMesh.mParentMesh = &meshes[parentNodeId];
 		meshes.push_back(tempMesh);
+
+		/*Logging information
+		LOG() << "Mesh size after push: " << meshes.size();
+		LOG() << "Last mesh, first bone name: " << (meshes[0].mBones.size());
+		LOG() << "first bone name and ID: " << (meshes[0].mBones[3]).name << " ID: " << (meshes[0].mBones[3]).id;
+		LOG() << "bones map using that name (name): " << meshes[0].bonesMap[meshes[0].mBones[3].name]->name;
+		LOG() << "bones map using that name (id)  : " << meshes[0].bonesMap[meshes[0].mBones[3].name]->id;
+		LOG() << "size of bone map" << meshes.back().bonesMap.size();
+		*/
 		meshesMap[mesh->mName.C_Str()] = &meshes.back();
 	}
 
@@ -315,6 +337,7 @@ void Model::processNode(aiNode *node, const aiScene *scene, int parentNodeId)
 	newNode.id = sBoneId;
 	newNode.parentId = parentNodeId;
 	pNodeIdMap[newNode.name] = newNode;
+	nodeCount++;
 	LOG() << "NODE: " << newNode.name << " ID: " << newNode.id << " --> " << newNode.parentId;
 
 
@@ -422,13 +445,13 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
 {
 	
 	vector<Texture> textures;
-	for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
+	for (int i = 0; i < mat->GetTextureCount(type); i++)
 	{
 		aiString str;
 		mat->GetTexture(type, i, &str);
 		// check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
 		bool skip = false;
-		for (unsigned int j = 0; j < textures_loaded.size(); j++)
+		for (int j = 0; j < textures_loaded.size(); j++)
 		{
 			if (std::strcmp(textures_loaded[j].path.data(), str.C_Str()) == 0)
 			{
@@ -454,3 +477,4 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
 	}
 	return textures;
 }
+
