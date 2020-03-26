@@ -21,6 +21,9 @@ vec3 aiVector3DToGlm(const aiVector3D* from) {
 	return vec3(from->x, from->y, from->z);
 }
 
+vec3 aiVector3DToGlm(aiVector3D from) {
+	return vec3(from.x, from.y, from.z);
+}
 
 std::vector<std::string> split(std::string s, std::string t)
 {
@@ -297,7 +300,7 @@ void Mesh::unbindTextures() {
 }
 
 
-void Mesh::TransformVertices(mat4 trans) {
+void Mesh::TransformSkeleton(mat4 trans) {
 	std::for_each(&mVertices[0], &mVertices[mNumVertices-1], [trans](Vertex &ver) {
 		ver.position = vec3(trans * vec4((ver.position), 1));
 		ver.normal = vec3(trans * vec4((ver.normal), 1));
@@ -306,8 +309,42 @@ void Mesh::TransformVertices(mat4 trans) {
 	});
 }
 
+void Mesh::InsertPose(float time, float scale, quat rotation, vec3 translation, int id) {
+	Bone* bone = mBonesArrOrdered[id];
+	BonePose pose;
+
+	pose.rotation = rotation;
+	pose.scale = scale;
+	pose.translation = translation;
+	bone->poses.push_back(pose);
+
+}
+
+void Mesh::InsertPose(float time, BonePose pose, int id) {
+	Bone* bone = mBonesArrOrdered[id];
+	bone->poses.push_back(pose);
+
+}
+
+
+mat4 Mesh::TransformMatrix(mat4 mat, vec4 vec) {
+	mat[0] = mat[0] * vec;
+	mat[1] = mat[1] * vec;
+	mat[2] = mat[2] * vec;
+	mat[3] = mat[3] * vec;
+	return (mat);
+}
+
 void Mesh::StoreBoneById(Bone* bone, int id) {
 	this->mBonesArrOrdered[id] = bone;
+	if (this->maxBoneId < id) { this->maxBoneId = id; }
+	if (this->minBoneId > id) { this->minBoneId = id; }
+}
+
+Bone Mesh::GetBoneById(int id) {
+	if (mBonesArrOrdered[id] == NULL) { return *(new Bone()); }//Return empty bone
+	return *(mBonesArrOrdered[id]);
+	
 }
 
 

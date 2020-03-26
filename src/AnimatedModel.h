@@ -4,16 +4,16 @@
 
 using namespace glm;
 
-
-struct Skeleton
-{
-	int boneCount = 0; // number of bones
-	Bone* bones[MAX_NUM_OF_BONES]; // array of joints
+struct Sample {
+	vector<BonePose> poses;	//The ID of the pose should correlate with the frame in the animation
 };
 
-struct SkeletonPose {
-	vector<BonePose*> localPoses;
-	vector<mat4*> globalPoses;
+struct Clip {
+	string name;
+	f32 fps;
+	uint frameCount;
+	vector<Sample> samples; //The ID of the pose should correlate with the bone ID
+	bool isLooping;
 };
 
 class AnimatedModel : public Model {
@@ -27,11 +27,12 @@ public:
 private:
 	void processAnimNodes(aiAnimation *node, const aiScene *scene);
 	void AssignBonesHierarchyByNodes();
-	void PopulateBonesArrayAndMap(); // Populate mBonesAr based on the IDs mentioned in mBones
+	void PopulateSkeletalData();
+	mat4 CalcLocalPose(BonePose pose);
+	mat4 GetGlobalPose(int meshId, int boneId);
+	void SetActiveSample(Clip clip, uint frame);
 
-	
-	Skeleton skel;
-	SkeletonPose skelPose;
+	vector<Clip> animations;
 };
 
 #endif

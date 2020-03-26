@@ -265,66 +265,59 @@ void Model::processNode(aiNode *node, const aiScene *scene, int parentNodeId)
 	static int sBoneId = 0;
 	sBoneId++;
 
+	//Define skeleton that can support the number of meshes we have
+	skeleton.bones = new Bone**[node->mNumMeshes];
+
+	for (int i = 0; i < node->mNumMeshes; i++) {
+		skeleton.bones[i] = new Bone*[MAX_NUM_OF_BONES];
+
+	}
+
 	// process each mesh located at the current node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		LOG() << "3." << i << ") adding mesh named: " << mesh->mName.C_Str();
+		LOG() << "3." << i << ") adding mesh named: " << mesh->mName.C_Str() << "with ID: " << i;
 		
 
 		Mesh tempMesh = processMesh(mesh, scene);
 		tempMesh.mNumVertices = mesh->mNumVertices;
+		tempMesh.id = i;
 
 
 		//Process bones if they exist
 		if (mesh->HasBones()) {
-			tempMesh.mBonePose.transformation = aiMatrix4x4ToGlm(&(node->mTransformation));
-			LOG() << "temp mesh's mBoneArray size is: " << (mesh->mNumBones + 1);
 
-			LOG() << "Number of bones in this mesh: " << mesh->mNumBones;
 			for (unsigned int j = 0; j < mesh->mNumBones; j++) {
 
 				Bone newBone;
+
 				newBone.name = mesh->mBones[j]->mName.C_Str();
-				newBone.invBindPose = aiMatrix4x4ToGlm(&(mesh->mBones[j]->mOffsetMatrix));
-				newBone.vertexWeights = new float[tempMesh.mNumVertices];//(mesh->mBones[j]->mNumWeights)+1];
-				//newBone.id = j;
+				newBone.invBindPose = aiMatrix4x4ToGlm(&(mesh->mBones[j]->mOffsetMatrix)); //CONFIRMED CORRECT
+				newBone.vertexWeights = new float[tempMesh.mNumVertices];
+				newBone.meshId = i;
+
 
 				//Store vertex weight information in relation to the bone we are looking at
 				for (unsigned int k = 0; k < (mesh->mBones[j]->mNumWeights); k++) {
 					newBone.vertexWeights[mesh->mBones[j]->mWeights->mVertexId] = mesh->mBones[j]->mWeights->mWeight;
 				}
-
-				//LOG() << "PUSHED BACK BONE ID " << j;
 				
 				
 				tempMesh.mBones.push_back(newBone);
-				//tempMesh.mBonesArrUnordered[j] = newBone;
-				//LOG() << tempMesh.mBones.back().name;
-				//tempMesh.bonesMap.insert(pair<string, Bone*>(newBone.name, &(tempMesh.mBones[tempMesh.mBones.size()-1])));
-				
 
-				//LOG() << "INSERTED BONE " << newBone.name << " TO ID " << newBone.id;
-				//LOG() << "SEE: " << tempMesh.mBonesAr[newBone.id].name;
 			}
 			
 		}
 
 
 		tempMesh.mParentMesh = &meshes[parentNodeId];
-		meshes.push_back(tempMesh);
 
-		/*Logging information
-		LOG() << "Mesh size after push: " << meshes.size();
-		LOG() << "Last mesh, first bone name: " << (meshes[0].mBones.size());
-		LOG() << "first bone name and ID: " << (meshes[0].mBones[3]).name << " ID: " << (meshes[0].mBones[3]).id;
-		LOG() << "bones map using that name (name): " << meshes[0].bonesMap[meshes[0].mBones[3].name]->name;
-		LOG() << "bones map using that name (id)  : " << meshes[0].bonesMap[meshes[0].mBones[3].name]->id;
-		LOG() << "size of bone map" << meshes.back().bonesMap.size();
-		*/
-		meshesMap[mesh->mName.C_Str()] = &meshes.back();
+		meshes.push_back(tempMesh); //Where we store the mesh
+		skeleton.meshes.push_back(&(meshes.back())); //Store mesh in model skeleton
+		meshesMap[mesh->mName.C_Str()] = &meshes.back(); //access mesh by name
 	}
 
 	

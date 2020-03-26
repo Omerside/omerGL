@@ -18,12 +18,30 @@ using namespace glm;
 //Needed for ASSIMP loading
 unsigned int TextureFromFile(const char *path, const string &directory, bool gamma = false);
 
+
 //Define the unique ID and parent ID of each node
 struct NodeIDMap {
 	string name;
 	int id;
 	int parentId;
 };
+
+
+/*
+Meshes associate with bone arrays and poses incrementally. 
+Mesh 1 -> Bones array 1 -> global pose 1, etc. etc.
+*/
+struct Skeleton
+{
+	int boneCount = 0; // number of bones
+	vector<Mesh*> meshes;
+	Bone*** bones; // [Mesh ID][bone ID] = ->bone
+	vector<mat4*> globalPoses; //[Mesh ID][bone ID] = global pose
+	vector<mat4*> localPoses; // [Mesh ID][bone ID] = local poses
+	map<string, Bone*> bonesMap;
+};
+
+
 
 class Model {
 public:
@@ -62,6 +80,8 @@ protected:
 	Mesh processMesh(aiMesh *mesh, const aiScene *scene);
 	vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName);
 	vector<Mesh> meshes;
+	int maxBoneId = 0;
+	int minBoneId = MAX_NUM_OF_BONES;
 	string directory;
 
 	unordered_map<string, NodeIDMap> pNodeIdMap; //This node relationship struct is used to generate the bone hierarchy for the AnimatedModel class. name->node.
@@ -72,6 +92,9 @@ protected:
 	ShaderProgram *shader;
 	std::pair<Texture2D, Texture2D> textures; //texture map, specular map
 	Mesh mMesh; //used in an older file processing function
+
+	
+	Skeleton skeleton; //Skeleton used for animation but can be loaded for non-animated models all the same.
 
 };
 
