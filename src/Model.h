@@ -19,11 +19,16 @@ using namespace glm;
 unsigned int TextureFromFile(const char *path, const string &directory, bool gamma = false);
 
 
-//Define the unique ID and parent ID of each node
-struct NodeIDMap {
+//Store node information
+struct Node {
 	string name;
+	mat4 transform;
 	int id;
 	int parentId;
+	vector<int> childrenId;
+	bool hasBone = false;
+	Bone* bone;
+	
 };
 
 
@@ -55,46 +60,54 @@ public:
 	void SetScale(vec3 scaleIn);
 	void Draw(vec3 pos);
 	void DrawModel(vec3 pos);
+	void PrintNodeHierarchy();
 	int GetNodeCount() { return nodeCount; }
-
-	
-
-	//ASSIMP FUNCTIONS
 	void loadModel(string  const &path);
-	//END ASSIMP FUNCTIONS
-
 
 	~Model();
 
 protected:
 	
 
-	bool LoadTextures(std::string file, bool isSpecMap = false);
-	bool LoadObjMeshes(std::string file);
-
-	vec3 scale = vec3(1.0f);
-
-	// ASSIMPT FUNCTIONS AND VARS
-
-	void processNode(aiNode *node, const aiScene *scene, int boneId);
-	Mesh processMesh(aiMesh *mesh, const aiScene *scene);
+	bool LoadTextures(string file, bool isSpecMap = false);
+	bool LoadObjMeshes(string file);
 	vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName);
-	vector<Mesh> meshes;
-	int maxBoneId = 0;
-	int minBoneId = MAX_NUM_OF_BONES;
+	int processNode(aiNode *node, int boneId);
+	Mesh processMesh(aiMesh *mesh);
+	void processBones(aiNode *node);
+	void SetFinalSkelTransforms();
+	void SetFinalBoneTransform(int boneId);
+
+	//baseline
+	const aiScene* scene;
+	vec3 scale = vec3(1.0f);
 	string directory;
-
-	unordered_map<string, NodeIDMap> pNodeIdMap; //This node relationship struct is used to generate the bone hierarchy for the AnimatedModel class. name->node.
-	int nodeCount = 0; // quick access for pNodeIdMap count of objects.
-
-	vector<Texture> textures_loaded;
-	map<string, Mesh*> meshesMap;
 	ShaderProgram *shader;
-	std::pair<Texture2D, Texture2D> textures; //texture map, specular map
-	Mesh mMesh; //used in an older file processing function
+
+	//Node data
+	vector<Node> nodes;
+	map<string, int> nodesMap; //This node relationship struct is used to generate the bone hierarchy for the AnimatedModel class. name->node location in nodes array.
+	int nodeCount = 0; // quick access for nodesMap count of objects.
+
+	//Mesh data
+	aiMesh* rawMesh; // the raw mesh array derived from assimp
+	Mesh mMesh; //primary mesh used for containing bones
+	vector<Mesh> meshes; //deprecated
+	map<string, Mesh*> meshesMap; //deprecated
 
 	
+	//Texture data
+	vector<Texture> textures_loaded;
+	pair<Texture2D, Texture2D> textures; //texture map, specular map
+
+	
+	//Animation data
 	Skeleton skeleton; //Skeleton used for animation but can be loaded for non-animated models all the same.
+	mat4 globalInverseTransform; //inverse of Scene->mRootNode->mTransformation;
+	mat4 finalTransforms[MAX_NUM_OF_BONES]; //tansformation matrices to be sent to shader
+
+
+	
 
 };
 

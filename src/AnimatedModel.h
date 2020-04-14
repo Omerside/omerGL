@@ -4,15 +4,18 @@
 
 using namespace glm;
 
+//Defines pose of a bone at a given frame in the animation.
 struct Sample {
 	vector<BonePose> poses;	//The ID of the pose should correlate with the frame in the animation
 };
 
+//Defines collection of poses for all bones which are part of an animation.
 struct Clip {
+	aiAnimation* animation = new aiAnimation();
 	string name;
 	f32 fps;
 	uint frameCount;
-	vector<Sample> samples; //The ID of the pose should correlate with the bone ID
+	vector<Sample> samples; //The ID of the sample should correlate with the bone ID
 	bool isLooping;
 };
 

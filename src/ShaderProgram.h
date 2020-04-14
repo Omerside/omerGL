@@ -32,6 +32,7 @@ public:
 	void SetUniform(const GLchar* name, const glm::vec3& v);
 	void SetUniform(const GLchar* name, const glm::vec4& v);
 	void SetUniform(const GLchar* name, const glm::mat4& m);
+	void SetUniform(const GLchar* name, const glm::mat4* mArr);
 	void SetUniformSampler(const GLchar* name, const GLint& slot);
 
 	void SetGlobalUniforms();

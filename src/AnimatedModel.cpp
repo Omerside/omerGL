@@ -9,18 +9,23 @@ AnimatedModel::AnimatedModel(ShaderProgram *shaderIn, std::string animationFile)
 	//Load meshes into vector<Mesh> meshes (Model.h)
 	loadModel(animationFile);
 
-	//Assign bone hierarchy for animation
-	AssignBonesHierarchyByNodes();
 
-	//populate map and array for easier processing and faster access, respectively.
+	LOG(DEBUG) << ":: ENTERING PopulateSkeletalData() ::";
+	//Load animation data including bones, poses. 
 	PopulateSkeletalData();
 
-	LOG() << "DONE?>!?!";
-
-	//Load animation data including bones, poses. 
+	LOG(DEBUG) << ":: ENTERING LoadAnimationData(animationFile) ::";
 	LoadAnimationData(animationFile);
 
+	//Assign bone hierarchy for animation
+	LOG(DEBUG) << ":: ENTERING AssignBonesHierarchyByNodes() ::";
+	//AssignBonesHierarchyByNodes();
+	PrintNodeHierarchy();
+
+
 	LOG() << "Animated model loaded.";
+	SetActiveSample(animations[0], 1);
+
 
 }
 
@@ -67,91 +72,71 @@ void AnimatedModel::processAnimNodes(aiAnimation *animation, const aiScene *scen
 {
 
 	Clip newAnimation;
+	newAnimation.animation = animation;
 	newAnimation.name = animation->mName.C_Str();
 	newAnimation.frameCount = animation->mDuration;
 	newAnimation.fps = animation->mTicksPerSecond;
 	newAnimation.isLooping = false;
-	newAnimation.samples.resize(maxBoneId);
+	newAnimation.samples.resize(mMesh.maxBoneId);
+
 
 	aiNodeAnim** nodeChannels = animation->mChannels;
 
 
 	for (unsigned int i = 0; i < animation->mNumChannels; i++){
+		int boneId = mMesh.GetBoneByName(nodeChannels[i]->mNodeName.C_Str()).id;
+		LOG() << "AnimNode node name: " << nodeChannels[i]->mNodeName.C_Str() << " ID: " << boneId;
 		Sample sample;
 		sample.poses.resize(nodeChannels[i]->mNumRotationKeys);
-		
-
-		for (unsigned int j = 0; j < nodeChannels[i]->mNumRotationKeys; j++) {
-			BonePose pose;
-			pose.rotation = quat(nodeChannels[i]->mRotationKeys[j].mValue.x,
+		//We use mNumPositionKeys because, as per the assimp docs: 
+		//If there are position keys, there will also be at least one scaling and one rotation key.
+		for (unsigned int j = 0; j < nodeChannels[i]->mNumPositionKeys; j++) {
+			sample.poses[j].rotation = quat(nodeChannels[i]->mRotationKeys[j].mValue.x,
 				nodeChannels[i]->mRotationKeys[j].mValue.y,
 				nodeChannels[i]->mRotationKeys[j].mValue.z,
 				nodeChannels[i]->mRotationKeys[j].mValue.w);
 
-			pose.scale = 1;
-			
-
+			sample.poses[j].rotationMat = mat4(aiMatrix3x3ToGlm(nodeChannels[i]->mRotationKeys[j].mValue.GetMatrix()));
+			sample.poses[j].scale = 1;
 			//Need to multiply inverse bind pose by animation translation
-			pose.translation = (aiVector3DToGlm(nodeChannels[i]->mPositionKeys[j].mValue));
-
-			sample.poses[j] = pose;
+			sample.poses[j].translation = (aiVector3DToGlm(nodeChannels[i]->mPositionKeys[j].mValue));
+			sample.poses[j].translationMat = glm::translate(sample.poses[j].translation);
+			sample.poses[j].transform = sample.poses[j].translationMat * sample.poses[j].rotationMat * sample.poses[j].scale;
 		}
-	
-		newAnimation.samples[skeleton.bonesMap[nodeChannels[i]->mNodeName.C_Str()]->id] = (sample);
-		
+
+		newAnimation.samples[boneId] = (sample);
 	}
 
 	animations.push_back(newAnimation);
-	/*
-	for (unsigned int i = 0; i < animation->mNumMeshChannels; i++){
-
-		LOG() << "Mesh animation channel name is: " << meshChannels[i]->mName.C_Str();
-		
-	}
-	*/
-
-
 	/**Transform vertices:	**/
 	//aiMatrix4x4 tempMatrix = node->mTransformation;// .RotationX(0.4, m);
 	//tempMatrix.RotationX(-1.5, tempMatrix);
-	//tempMesh.TransformVertices(aiMatrix4x4ToGlm(&tempMatrix));
 
 }
 
 void AnimatedModel::AssignBonesHierarchyByNodes()
 {
-	LOG() << "Assigning bone hierarchy...";
-	for (int i = 0; i < meshes.size(); i++) {
+	LOG() << "Assigning bone hierarchy... node map size: " << nodesMap.size();
+	for (std::map<string, int>::iterator it = nodesMap.begin(); it != nodesMap.end(); ++it)
+		std::cout << it->first << " => " << it->second << '\n';
+	
+	//nodeTransforms = new mat4[nodesMap.size()];
 
-		//bones = &(meshes[i].mBones);		
-		//childrenIdArray uses the ID of the bone as its location in the array
-		vector<int>* childrenIdArray = new vector<int>[MAX_NUM_OF_BONES];
+	vector<int>* childrenIdArray = new vector<int>[MAX_NUM_OF_BONES];
+	vector<vector<Sample>> orderedSamples;
+	orderedSamples.resize(animations.size());
+
+	for_each(orderedSamples.begin(), orderedSamples.end(), [](vector<Sample> &samples) {
+		samples.resize(MAX_NUM_OF_BONES);
+	});
+
+	orderedSamples.resize(mMesh.maxBoneId);
+
+
 
 		
-		for (int j = 0; j < meshes[i].mBones.size(); j++) {
-			//define bone id, parent ID
-			meshes[i].mBones[j].id = pNodeIdMap[(meshes[i].mBones[j]).name].id;
-			
-			//LOG() << "size of bones map: " << (*bones)[j].id;
-
-			meshes[i].mBones[j].parentId = pNodeIdMap[(meshes[i].mBones[j]).name].parentId;
-			
-			//Record who the parent of this bone is. This will be used below to generate a map of children for each bone.
-			childrenIdArray[meshes[i].mBones[j].parentId].push_back(meshes[i].mBones[j].id);
-
-		}
-		
-		for (int j = 0; j < meshes[i].mBones.size(); j++) {
-			//Assign list of children to bone based on ID
-			meshes[i].mBones[j].childrenId = childrenIdArray[meshes[i].mBones[j].id];
-		}
-		
-		meshes[i].PrintBoneHierarchy();
-
-		//delete[] childrenIdArray;
-
-	}
-
+	mMesh.PrintBoneHierarchy();
+	
 }
 
 void  AnimatedModel::DrawModel(vec3 pos, int frame) {
@@ -164,65 +149,39 @@ void  AnimatedModel::DrawModel(vec3 pos, int frame) {
 
 	mat4 model = translate(mat4(), pos) * glm::scale(mat4(), scale);
 	shader->SetUniform("model", model);
+	shader->SetUniform("finalTransforms", finalTransforms);
 
-	int meshSize = meshes.size();
-	for (int i = 0; i < meshSize; i++) {
-		LOG() << "5." << i << ") Calculating transformation";
-		//meshes[i].mVertices
 
-		LOG() << "5." << i << ") Drawing mesh.";
-		meshes[i].bindTextures();
-		meshes[i].draw();
-		meshes[i].unbindTextures();
-		LOG() << "Finished drawing mesh.";
-	}
+	LOG() << "5) Calculating transformation";
 
+	LOG() << "5) Drawing mesh.";
+	mMesh.bindTextures();
+	mMesh.draw();
+	mMesh.unbindTextures();
+	LOG() << "Finished drawing mesh.";
 	
 }
 
 /*Requires that mBones is populated for all meshes*/
 void AnimatedModel::PopulateSkeletalData() {
-	for (int i = 0; i < meshes.size(); i++) {
 		
-		for (int j = 0; j < meshes[i].mBones.size(); j++) {
-			//Store id->bone relationship in skeleton object
-			skeleton.bones[i][meshes[i].mBones[j].id] = &(meshes[i].mBones[j]);
+	for (int j = 0; j < mMesh.mBones.size(); j++) {
+		//Store id->bone relationship in skeleton object
+		//skeleton.bones[0][mMesh.mBones[j].id] = &(mMesh.mBones[j]);
 
-			//Store id->bone relationship in bones array associated with mesh
-			meshes[i].StoreBoneById(&(meshes[i].mBones[j]), meshes[i].mBones[j].id);
+		//Store id->bone relationship in bones array associated with mesh
+		//These values will later be changed as we discover the bone hierarchy.
+		mMesh.StoreBoneById(&(mMesh.mBones[j]), mMesh.mBones[j].id);
 			
-			//Store name->bone relationship in bones map associated with mesh
-			meshes[i].bonesMap.insert(pair<string, Bone*>(meshes[i].mBones[j].name, (meshes[i].mBonesArrOrdered[meshes[i].mBones[j].id])));
+		//Store name->bone relationship in bones map associated with mesh
+		mMesh.SetBoneByName(&mMesh.mBones[j], mMesh.mBones[j].name);
 
-			//Store name->bone relationship in bones map associated with skeleton
-			skeleton.bonesMap[meshes[i].mBones[j].name] = &(meshes[i].mBones[j]);
+		//Store name->bone relationship in bones map associated with skeleton
+		//skeleton.bonesMap[mMesh.mBones[j].name] = &(mMesh.mBones[j]);
 
-			//increment total number of bones
-			skeleton.boneCount++;
-		}
-
-		//get min and max ID values
-		if (minBoneId > meshes[i].minBoneId) { minBoneId = meshes[i].minBoneId; }
-		if (maxBoneId < meshes[i].maxBoneId) { maxBoneId = meshes[i].maxBoneId; }
-		maxBoneId++; // increment to avoid off-by-1 errors
 	}
 
-
-	//Define global poses
-	skeleton.globalPoses.resize(meshes.size());
-
-	for (int i = 0; i < meshes.size(); i++) {
-		skeleton.globalPoses[i] = new mat4[maxBoneId];
-
-		if (skeleton.bones[i][0] != NULL) {  // If the mesh has bones...
-			for (int j = 0; j < meshes[i].mBones.size(); j++) {
-				LOG() << "Calculating global pose for: " << meshes[i].mBones[j].name;
-				skeleton.globalPoses[i][meshes[i].mBones[j].id] = GetGlobalPose(i, meshes[i].mBones[j].id);
-				LOG() << "DONE Calculating global pose for: " << meshes[i].mBones[j].name;
-				meshes[i].mBones[j].globalPose = &(skeleton.globalPoses[i][j]);
-			}
-		}
-	}
+	
 }
 
 /*Recalculate local pose
@@ -233,13 +192,14 @@ mat4 AnimatedModel::CalcLocalPose(BonePose pose) {
 	//affine transformation begins with Scale and Rotation calculation:
 	mat3 transMatrix = (pose.scale*toMat3(pose.rotation));
 	
-	//Applued to the complete local pose:
+	//Applied to the complete local pose:
 	mat4 localPose;
 	localPose[0] = vec4(transMatrix[0], 0);
 	localPose[1] = vec4(transMatrix[1], 0);
 	localPose[2] = vec4(transMatrix[2], 0);
 	localPose[3] = vec4(pose.translation, 1);
 
+	return localPose;
 }
 
 
@@ -250,22 +210,17 @@ mat4 AnimatedModel::CalcLocalPose(BonePose pose) {
 mat4 AnimatedModel::GetGlobalPose(int meshId, int boneId) {
 	if (boneId == -1) { return mat4(1.0f); } // return of we've reached the root, though we should never get here.
 
-	Bone bone = meshes[meshId].GetBoneById(boneId);
-
-	LOG() << "In GetGlobalPose - ID: " << bone.id;
-	LOG() << "In GetGlobalPose - Parent ID: " << bone.parentId;
+	Bone bone = mMesh.GetBoneById(boneId);
 
 
-
-
-	if (bone.parentId <= minBoneId) {
-		return bone.invBindPose;
+	if (bone.parentId <= mMesh.minBoneId) {
+		return bone.nodeTransform;
 	}
 
-	Bone parentBone = meshes[meshId].GetBoneById(bone.parentId);
+	Bone parentBone = mMesh.GetBoneById(bone.parentId);
 
 	//Transform local pose with parent local pose
-	mat4 newLocalPose = *(bone.localPose) * *(parentBone.localPose);
+	mat4 newLocalPose = (bone.localPose) * (parentBone.localPose);
 
 	//multiply our new local by the local of the parent ID
 	return (newLocalPose * GetGlobalPose(meshId, parentBone.id));
@@ -273,4 +228,23 @@ mat4 AnimatedModel::GetGlobalPose(int meshId, int boneId) {
 
 void AnimatedModel::SetActiveSample(Clip clip, uint frame) {
 
+	LOG() << "Setting local poses. Size of samples array: " << clip.samples.size();
+	int boneId;
+
+	for (int i = 0; i < mMesh.mBones.size(); i++) {
+		
+		boneId = mMesh.mBones[i].id;
+		LOG() << "Bone ID: " << boneId;
+		LOG() << "Checking if " << mMesh.mBones[i].name << " it has poses... ";
+		if (!clip.samples[boneId].poses.empty()) {
+			
+			mMesh.SetLocalPose(boneId, mMesh.GenerateLocalPose(clip.samples[boneId].poses[frame]));
+			
+		}
+
+	}
+
+	LOG() << "Setting global poses";
+	mMesh.SetGlobalPoses();
+	SetFinalSkelTransforms();
 }

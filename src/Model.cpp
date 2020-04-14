@@ -160,15 +160,17 @@ void  Model::DrawModel(vec3 pos) {
 
 	mat4 model = translate(mat4(), pos) * glm::scale(mat4(), scale);
 	shader->SetUniform("model", model);
-
 	int meshSize = meshes.size();
-	for (int i = 0; i < meshSize; i++) {
-		LOG() << "5." << i << ") Drawing mesh.";
-		meshes[i].bindTextures();
-		meshes[i].draw();
-		meshes[i].unbindTextures();
-		LOG() << "Finished drawing mesh.";
+
+	for (int j = 0; j < mMesh.mBones.size(); j++) {
+		model = (mMesh.mBones[j].globalPose) * (glm::scale(mat4(), scale));
 	}
+	LOG() << "5) Drawing mesh.";
+	mMesh.bindTextures();
+	mMesh.draw();
+	mMesh.unbindTextures();
+	LOG() << "Finished drawing mesh.";
+	
 
 }
 
@@ -229,7 +231,7 @@ void Model::loadModel(string const &path)
 {
 	// read file via ASSIMP
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace );
+	scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals);
 	LOG() << "2) imported scene";
 	// check for errors
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
@@ -243,35 +245,21 @@ void Model::loadModel(string const &path)
 	// process ASSIMP's root node recursively
 	LOG() << "3) Beginning processing nodes...";
 
-	if (scene->HasMaterials()) {
-		LOG() << "Note: This model contains materials. ";
-		if (scene->HasTextures()) {
-			LOG() << "As well as textures. ";
-		}
-	}
-	LOG() << "Number of nodes: " << 1+(scene->mRootNode->mNumChildren);
-	processNode(scene->mRootNode, scene, 0);
-	LOG() << "Number of meshes processed: " << meshes.size();
 
-	for (int i = 0; i < meshes.size(); i++) {
-		
-		meshes[i].initBuffers();
-	}
+	globalInverseTransform = inverse(aiMatrix4x4ToGlm(&scene->mRootNode->mTransformation));
+	processBones(scene->mRootNode);
+	processNode(scene->mRootNode, -1);
+	
+	
+	
+	LOG() << "Number of meshes processed: " << meshes.size();
+	
+	mMesh.initBuffers();	
 }
 
-// processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
-void Model::processNode(aiNode *node, const aiScene *scene, int parentNodeId)
-{
-	static int sBoneId = 0;
-	sBoneId++;
 
-	//Define skeleton that can support the number of meshes we have
-	skeleton.bones = new Bone**[node->mNumMeshes];
-
-	for (int i = 0; i < node->mNumMeshes; i++) {
-		skeleton.bones[i] = new Bone*[MAX_NUM_OF_BONES];
-
-	}
+void Model::processBones(aiNode *node) {
+	static bool bonesFound = false;
 
 	// process each mesh located at the current node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
@@ -279,69 +267,118 @@ void Model::processNode(aiNode *node, const aiScene *scene, int parentNodeId)
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		LOG() << "3." << i << ") adding mesh named: " << mesh->mName.C_Str() << "with ID: " << i;
-		
 
-		Mesh tempMesh = processMesh(mesh, scene);
-		tempMesh.mNumVertices = mesh->mNumVertices;
-		tempMesh.id = i;
+
+		LOG(DEBUG) << "3." << i << ") adding mesh named: " << mesh->mName.C_Str() << "with ID: " << i;
+
+		mMesh = processMesh(mesh);
+		mMesh.mNumVertices = mesh->mNumVertices;
+
+		mMesh.vertexWeightArr.resize(mMesh.mNumVertices);
+		mMesh.id = i;
 
 
 		//Process bones if they exist
 		if (mesh->HasBones()) {
+			mMesh.mBones.resize(mesh->mNumBones);
 
 			for (unsigned int j = 0; j < mesh->mNumBones; j++) {
 
 				Bone newBone;
 
 				newBone.name = mesh->mBones[j]->mName.C_Str();
-				newBone.invBindPose = aiMatrix4x4ToGlm(&(mesh->mBones[j]->mOffsetMatrix)); //CONFIRMED CORRECT
-				newBone.vertexWeights = new float[tempMesh.mNumVertices];
-				newBone.meshId = i;
+				newBone.offsetMatrix = aiMatrix4x4ToGlm(&(mesh->mBones[j]->mOffsetMatrix));
+				newBone.vertexWeights.resize(mesh->mBones[j]->mNumWeights);
 
 
-				//Store vertex weight information in relation to the bone we are looking at
 				for (unsigned int k = 0; k < (mesh->mBones[j]->mNumWeights); k++) {
-					newBone.vertexWeights[mesh->mBones[j]->mWeights->mVertexId] = mesh->mBones[j]->mWeights->mWeight;
+					newBone.vertexWeights[j] = pair<int, float>(mesh->mBones[j]->mWeights[k].mVertexId, mesh->mBones[j]->mWeights[k].mWeight);
+					mMesh.vertexWeightArr[mesh->mBones[j]->mWeights[k].mVertexId].insert(j, mesh->mBones[j]->mWeights[k].mWeight);
 				}
-				
-				
-				tempMesh.mBones.push_back(newBone);
+
+				mMesh.mBones[j] = newBone;
+				mMesh.SetBoneByName(&mMesh.mBones[j], newBone.name);
+
 
 			}
-			
+
+
+			LOG(DEBUG) << "processBones: found mesh with bones - assigned to bones array in mMesh.";
+			bonesFound = true;
+			return;
+
 		}
-
-
-		tempMesh.mParentMesh = &meshes[parentNodeId];
-
-		meshes.push_back(tempMesh); //Where we store the mesh
-		skeleton.meshes.push_back(&(meshes.back())); //Store mesh in model skeleton
-		meshesMap[mesh->mName.C_Str()] = &meshes.back(); //access mesh by name
 	}
 
-	
 
-	// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
-	//If there are no children, we simply assign the node properties and return.
-	//We also take this chance to populate a map of parent-child relationship between the nodes.
-	NodeIDMap newNode;
-	newNode.name = node->mName.C_Str();
-	newNode.id = sBoneId;
-	newNode.parentId = parentNodeId;
-	pNodeIdMap[newNode.name] = newNode;
-	nodeCount++;
-	LOG() << "NODE: " << newNode.name << " ID: " << newNode.id << " --> " << newNode.parentId;
-
-
-	//LOG() << "Children count for " << node->mName.C_Str() << ": " << node->mNumChildren;
-	for (int i = 0; i < node->mNumChildren; i++){
-		processNode(node->mChildren[i], scene, newNode.id);
+	for (int i = 0; i < node->mNumChildren; i++) {
+		if (bonesFound == false) {
+			processBones(node->mChildren[i]);
+		}
+		else {
+			return;
+		}
 	}
 
 }
 
-Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
+
+
+// processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
+// returns node ID
+int Model::processNode(aiNode *node, int parentNodeId)
+{
+	static int sBoneId = parentNodeId;
+	sBoneId++;
+
+	//Define skeleton that can support the number of meshes we have
+	//skeleton.bones = new Bone**[node->mNumMeshes];
+	Node newNode;
+
+	for (int i = 0; i < node->mNumMeshes; i++) {
+		//skeleton.bones[i] = new Bone*[MAX_NUM_OF_BONES];
+
+	}
+
+
+	// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
+	//If there are no children, we simply assign the node properties and return.
+	//We also take this chance to populate a map of parent-child relationship between the nodes.
+	
+	newNode.name = node->mName.C_Str();
+	newNode.id = sBoneId;
+	newNode.parentId = parentNodeId;
+	newNode.transform = aiMatrix4x4ToGlm(&node->mTransformation);
+	nodeCount++;
+
+	Bone* bonePtr = mMesh.bonesMap[newNode.name];
+
+	if (bonePtr > 0) {
+
+		mMesh.SetBoneIdByName(sBoneId, newNode.name);
+		mMesh.bonesMap[newNode.name]->nodeTransform = newNode.transform;
+		bonePtr->parentId = parentNodeId;
+	}
+
+	for (int i = 0; i < node->mNumChildren; i++) {
+		newNode.childrenId.push_back(processNode(node->mChildren[i], newNode.id));
+		
+		if (bonePtr > 0) {
+			LOG() << "Assigning childrenId of node " << node->mName.C_Str() << " to bone " << bonePtr->name;
+			bonePtr->childrenId.push_back(newNode.childrenId[newNode.childrenId.size() - 1]);
+		}
+	}
+
+
+	nodes.push_back(newNode);
+	nodesMap[newNode.name] = nodes.size()-1;
+	
+	LOG() << "NODE: " << nodes[nodesMap[newNode.name]].name << " ID: " << nodes[nodesMap[newNode.name]].id << " --> " << nodes[nodesMap[newNode.name]].parentId;
+
+	return newNode.id;
+}
+
+Mesh Model::processMesh(aiMesh *mesh)
 {
 	// data to fill
 	
@@ -380,12 +417,12 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 		vector.x = mesh->mTangents[i].x;
 		vector.y = mesh->mTangents[i].y;
 		vector.z = mesh->mTangents[i].z;
-		vertex.tangent = vector;
+		//vertex.tangent = vector;
 		// bitangent
 		vector.x = mesh->mBitangents[i].x;
 		vector.y = mesh->mBitangents[i].y;
 		vector.z = mesh->mBitangents[i].z;
-		vertex.bitangent = vector;
+		//vertex.bitangent = vector;
 		vertices[i] = vertex;
 	}
 	// now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -431,6 +468,38 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 	// return a mesh object created from the extracted mesh data
 	return Mesh(vertices, indices, textures);
 }
+
+void Model::PrintNodeHierarchy() {
+	for (int i = 0; i < nodes.size(); i++) {
+
+			LOG() << "Node name:   " << nodes[i].name;
+			if (nodes[i].hasBone) {
+				LOG() << "Correlates to bone.";
+			}
+
+			LOG() << "   ID:       " << nodes[i].id;
+			LOG() << "   Parent:   " << nodes[i].parentId;
+
+			int size = nodes[i].childrenId.size();
+			for (int j = 0; j < size; j++) {
+				LOG() << "   Child: " << nodes[i].childrenId[j];
+			}
+
+	}
+}
+
+void Model::SetFinalSkelTransforms() {
+	for (int i = 0; i < mMesh.mBones.size(); i++) {
+		SetFinalBoneTransform(i);
+	}
+
+}
+
+void Model::SetFinalBoneTransform(int boneId) {
+	this->finalTransforms[boneId] = globalInverseTransform * mMesh.mBones[boneId].globalPose * mMesh.mBones[boneId].offsetMatrix;
+	LOG() << "Final transform for bone ID " << boneId << " is " << this->finalTransforms[boneId];
+}
+
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.
 // the required info is returned as a Texture struct.
