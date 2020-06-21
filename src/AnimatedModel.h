@@ -25,7 +25,7 @@ public:
 	~AnimatedModel();
 	void LoadAnimationData(string const &path);
 	void  DrawModel(vec3 pos, int frame);
-
+	void PrintFinalSkelTransforms();
 
 private:
 	void processAnimNodes(aiAnimation *node, const aiScene *scene);

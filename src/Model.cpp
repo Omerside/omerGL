@@ -159,12 +159,16 @@ void  Model::DrawModel(vec3 pos) {
 	shader->SetUniform("material.shininess", vec3(35.0));
 
 	mat4 model = translate(mat4(), pos) * glm::scale(mat4(), scale);
-	shader->SetUniform("model", model);
-	int meshSize = meshes.size();
 
+
+	/*
+	int meshSize = meshes.size();
 	for (int j = 0; j < mMesh.mBones.size(); j++) {
 		model = (mMesh.mBones[j].globalPose) * (glm::scale(mat4(), scale));
-	}
+	}*/
+
+	shader->SetUniform("model", model);
+
 	LOG() << "5) Drawing mesh.";
 	mMesh.bindTextures();
 	mMesh.draw();
@@ -273,36 +277,30 @@ void Model::processBones(aiNode *node) {
 
 		mMesh = processMesh(mesh);
 		mMesh.mNumVertices = mesh->mNumVertices;
-
 		mMesh.vertexWeightArr.resize(mMesh.mNumVertices);
 		mMesh.id = i;
 
 
 		//Process bones if they exist
 		if (mesh->HasBones()) {
+
+			//resize bone vector to accommodate num of bones.
 			mMesh.mBones.resize(mesh->mNumBones);
 
 			for (unsigned int j = 0; j < mesh->mNumBones; j++) {
 
 				Bone newBone;
 
+				//Define temporary bone obj
 				newBone.name = mesh->mBones[j]->mName.C_Str();
 				newBone.offsetMatrix = aiMatrix4x4ToGlm(&(mesh->mBones[j]->mOffsetMatrix));
 				newBone.vertexWeights.resize(mesh->mBones[j]->mNumWeights);
+				newBone.rawBone = *mesh->mBones[j];
 
-
-				for (unsigned int k = 0; k < (mesh->mBones[j]->mNumWeights); k++) {
-					newBone.vertexWeights[j] = pair<int, float>(mesh->mBones[j]->mWeights[k].mVertexId, mesh->mBones[j]->mWeights[k].mWeight);
-					mMesh.vertexWeightArr[mesh->mBones[j]->mWeights[k].mVertexId].insert(j, mesh->mBones[j]->mWeights[k].mWeight);
-				}
-
+				//Store bone information in mMesh
 				mMesh.mBones[j] = newBone;
 				mMesh.SetBoneByName(&mMesh.mBones[j], newBone.name);
-
-
 			}
-
-
 			LOG(DEBUG) << "processBones: found mesh with bones - assigned to bones array in mMesh.";
 			bonesFound = true;
 			return;
@@ -331,20 +329,7 @@ int Model::processNode(aiNode *node, int parentNodeId)
 	static int sBoneId = parentNodeId;
 	sBoneId++;
 
-	//Define skeleton that can support the number of meshes we have
-	//skeleton.bones = new Bone**[node->mNumMeshes];
-	Node newNode;
-
-	for (int i = 0; i < node->mNumMeshes; i++) {
-		//skeleton.bones[i] = new Bone*[MAX_NUM_OF_BONES];
-
-	}
-
-
-	// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
-	//If there are no children, we simply assign the node properties and return.
-	//We also take this chance to populate a map of parent-child relationship between the nodes.
-	
+	Node newNode;	
 	newNode.name = node->mName.C_Str();
 	newNode.id = sBoneId;
 	newNode.parentId = parentNodeId;
@@ -358,8 +343,18 @@ int Model::processNode(aiNode *node, int parentNodeId)
 		mMesh.SetBoneIdByName(sBoneId, newNode.name);
 		mMesh.bonesMap[newNode.name]->nodeTransform = newNode.transform;
 		bonePtr->parentId = parentNodeId;
+
+		//Store bone->vertex weight relationship, now that we know the ID associated with the bone.
+		for (unsigned int k = 0; k < (bonePtr->rawBone.mNumWeights); k++) {
+			
+			bonePtr->vertexWeights[k] = pair<int, float>(bonePtr->rawBone.mWeights[k].mVertexId, bonePtr->rawBone.mWeights[k].mWeight);
+			mMesh.vertexWeightArr[bonePtr->rawBone.mWeights[k].mVertexId].insert(sBoneId, bonePtr->rawBone.mWeights[k].mWeight);
+			LOG() << "for Vertex ID " << bonePtr->rawBone.mWeights[k].mVertexId << ", inserted weight " << bonePtr->rawBone.mWeights[k].mWeight << " at bone ID " << sBoneId;
+		}
 	}
 
+
+	//Assign child node/bone values.
 	for (int i = 0; i < node->mNumChildren; i++) {
 		newNode.childrenId.push_back(processNode(node->mChildren[i], newNode.id));
 		
@@ -369,18 +364,16 @@ int Model::processNode(aiNode *node, int parentNodeId)
 		}
 	}
 
-
 	nodes.push_back(newNode);
 	nodesMap[newNode.name] = nodes.size()-1;
 	
-	LOG() << "NODE: " << nodes[nodesMap[newNode.name]].name << " ID: " << nodes[nodesMap[newNode.name]].id << " --> " << nodes[nodesMap[newNode.name]].parentId;
-
 	return newNode.id;
 }
 
+
+
 Mesh Model::processMesh(aiMesh *mesh)
 {
-	// data to fill
 	
 	Vertex* vertices = new Vertex[mesh->mNumVertices];
 	vector<unsigned int> indices;
@@ -490,14 +483,15 @@ void Model::PrintNodeHierarchy() {
 
 void Model::SetFinalSkelTransforms() {
 	for (int i = 0; i < mMesh.mBones.size(); i++) {
-		SetFinalBoneTransform(i);
+		SetFinalBoneTransform(mMesh.mBones[i].id);
 	}
 
 }
 
 void Model::SetFinalBoneTransform(int boneId) {
-	this->finalTransforms[boneId] = globalInverseTransform * mMesh.mBones[boneId].globalPose * mMesh.mBones[boneId].offsetMatrix;
-	LOG() << "Final transform for bone ID " << boneId << " is " << this->finalTransforms[boneId];
+	LOG() << "Calculating transform for id " << mMesh.mBonesArrOrdered[boneId]->name;
+	this->finalTransforms[boneId] = globalInverseTransform * mMesh.mBonesArrOrdered[boneId]->globalPose * mMesh.mBonesArrOrdered[boneId]->offsetMatrix;
+	LOG() << "Final transform for bone  " << mMesh.mBonesArrOrdered[boneId]->name << " ID: " << mMesh.mBonesArrOrdered[boneId]->id << " is: " << this->finalTransforms[boneId];
 }
 
 

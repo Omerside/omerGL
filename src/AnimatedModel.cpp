@@ -2,7 +2,7 @@
 #include "Log.h"
 
 
-AnimatedModel::AnimatedModel(ShaderProgram *shaderIn, std::string animationFile) 
+AnimatedModel::AnimatedModel(ShaderProgram *shaderIn, std::string animationFile)
 {
 	shader = shaderIn;
 
@@ -10,22 +10,16 @@ AnimatedModel::AnimatedModel(ShaderProgram *shaderIn, std::string animationFile)
 	loadModel(animationFile);
 
 
-	LOG(DEBUG) << ":: ENTERING PopulateSkeletalData() ::";
-	//Load animation data including bones, poses. 
-	PopulateSkeletalData();
-
 	LOG(DEBUG) << ":: ENTERING LoadAnimationData(animationFile) ::";
 	LoadAnimationData(animationFile);
 
 	//Assign bone hierarchy for animation
-	LOG(DEBUG) << ":: ENTERING AssignBonesHierarchyByNodes() ::";
 	//AssignBonesHierarchyByNodes();
 	PrintNodeHierarchy();
 
 
 	LOG() << "Animated model loaded.";
-	SetActiveSample(animations[0], 1);
-
+	SetActiveSample(animations[0], 10);
 
 }
 
@@ -152,6 +146,8 @@ void  AnimatedModel::DrawModel(vec3 pos, int frame) {
 	shader->SetUniform("finalTransforms", finalTransforms);
 
 
+
+
 	LOG() << "5) Calculating transformation";
 
 	LOG() << "5) Drawing mesh.";
@@ -247,4 +243,14 @@ void AnimatedModel::SetActiveSample(Clip clip, uint frame) {
 	LOG() << "Setting global poses";
 	mMesh.SetGlobalPoses();
 	SetFinalSkelTransforms();
+	PrintFinalSkelTransforms();
+	mMesh.PrintVertexWeightArray();
+
+}
+
+void AnimatedModel::PrintFinalSkelTransforms() {
+	LOG() << "Printing final bone transformation: ";
+	for (int i = 0; i < finalTransforms->length(); i++) {
+		LOG() << finalTransforms[i];
+	}
 }

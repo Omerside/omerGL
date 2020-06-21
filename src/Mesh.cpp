@@ -499,7 +499,7 @@ void Mesh::ChangeBoneId(int oldBoneId, int newBoneId) {
 
 void Mesh::SetBoneIdByName(int id, string name) {
 	this->bonesMap[name]->id = id;
-	mBonesArrOrdered[id] = this->bonesMap[name];
+	this->StoreBoneById(this->bonesMap[name], id);
 }
 
 void Mesh::StoreBoneById(Bone* bone, int id) {
@@ -566,6 +566,7 @@ void Mesh::draw() {
 		LOG(ERROR) << "Mesh not loaded.";
 		return; 
 	}
+	
 
 	LOG() << "     - Binding vertex array object number " << this->mVAO;
 	glBindVertexArray(this->mVAO);
@@ -635,3 +636,15 @@ void Mesh::initBuffers() {
 	
 }
 
+void Mesh::PrintVertexWeightArray() {
+	LOG() << "Printing vertex weight array values";
+	for (int i = 0; i < vertexWeightArr.size(); i++) {
+		LOG() << "Vertex ID:       " << i;
+		LOG() << "Vertex Location: " << mVertices[i].position;
+		for (int j = 0; j < 4; j++) {
+			LOG() << "Bone ID: " << vertexWeightArr[i].id[j];
+			LOG() << "Weight: " << vertexWeightArr[i].weight[j];
+			
+		}
+	}
+}

@@ -54,16 +54,10 @@ int main() {
 		std::cerr << "GLFW init error - aborting" << std::endl;
 		return -1;
 	}
-	//
-	LOG() << "TEST";
-	
 
 	//creating shader
 	ShaderProgram shaderProgram;
 	shaderProgram.LoadShaders("basic.vert", "lighting_multifunc.frag");
-
-
-
 
 	//model positions
 	vec3 modelPos[] = {
@@ -111,8 +105,9 @@ int main() {
 	texture[3].loadTexture("tile_floor.jpg", true);
 	
 	Texture2D nanosuitTex;
-	nanosuitTex.loadTexture("Character Texture.png", true);
-	AnimatedModel nanosuit(&shaderProgram, "char_running_v2.dae");
+	//nanosuitTex.loadTexture("Character Texture.png", true);
+	//AnimatedModel nanosuit(&shaderProgram, "char_running_v2.dae");
+	AnimatedModel bendingRod(&shaderProgram, "turnstick3.dae");
 	//AnimatedModel nanosuitAnimated(&shaderProgram, "Character Running.obj", "Character Running.dae");
 	LOG() << "FINISHED LOADING MODELS";
 
@@ -197,6 +192,7 @@ int main() {
 		pointLights.draw();
 
 
+		/* Some models
 		for (int i = 1; i < numModels; i++) {
 			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
 			shaderProgram.SetUniform("model", model);
@@ -213,9 +209,13 @@ int main() {
 			texture[i].unbind(0);
 
 		}
+		*/
 
 
-		nanosuit.DrawModel(vec3(8.0f, 2.0f, 2.0f), -1);
+		//nanosuit.DrawModel(vec3(8.0f, 2.0f, 2.0f), -1);
+		texture[3].bind(0);
+		bendingRod.DrawModel(vec3(0.0f, 0.0f, 0.0f), -1);
+		texture[3].unbind(0);
 
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);

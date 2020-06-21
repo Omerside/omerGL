@@ -83,7 +83,7 @@ struct Bone {
 	mat4 localPose;
 	mat4 globalPose;
 	
-	vector<BonePose> poses;
+	aiBone rawBone;
 };
 
 
@@ -130,6 +130,9 @@ private:
 	void SetGlobalPose(int boneId, mat4 pose);
 	void SetGlobalPoses(int boneId, mat4 parentGlobalPose); // helper function to help streamline 
 	mat4 GenerateLocalPose(BonePose pose);
+
+	//Helpers
+	void PrintVertexWeightArray();
 	
 	//Baseline data (vertex information, buffers, etc.)
 	Vertex* mVertices;
@@ -145,7 +148,7 @@ private:
 	vector<Bone> mBones; //unordered stack of bones
 	Bone* mBonesArrOrdered[MAX_NUM_OF_BONES]; // refers to bone objects by their ID
 	map<string, Bone*> bonesMap; // Map array for bone access by name
-	vector<BoneVertexWeight> vertexWeightArr; // [vertex ID] = {bone ID, weight}
+	vector<BoneVertexWeight> vertexWeightArr; // [vertex ID] = {[bone ID] = weight}
 	
 
 	//misc data
