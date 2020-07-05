@@ -62,20 +62,32 @@ uniform mat4 finalTransforms[MAX_NUM_OF_BONES]; //transformation matrices based 
 void main()
 {
 
-	mat4 BoneTransform = mat4(1.0f);
-	if (boneIds[0] > 0){
-		BoneTransform += finalTransforms[boneIds[0]];// * weights[0];
-		BoneTransform += finalTransforms[boneIds[1]];// * weights[1];
-		BoneTransform += finalTransforms[boneIds[2]];// * weights[2];
-		BoneTransform += finalTransforms[boneIds[3]];// * weights[3];
+//This is a hardcoded of version of the transformation matrix generated in the program for turnstick.
+mat4 tempBoneTransform = mat4(0.52f, 0.0f, 0.85f, 0.0f,
+								-0.08f, -1.0f, 0.049f, 0.0f,
+								0.85f, -0.094f, -0.52f, 0.0f,
+								0.34f, 4.2f, -0.2f, 1.0f);
+
+	mat4 BoneTransform;
+	if (boneIds[0] > 0 && weights[0] > 0){
+		
+		BoneTransform = finalTransforms[boneIds[0]] * weights[0];
+		//BoneTransform += finalTransforms[boneIds[1]] * 0;weights[1];
+		//BoneTransform += finalTransforms[boneIds[2]] * 0;weights[2];
+		//BoneTransform += finalTransforms[boneIds[3]] * 0;weights[3];
+		//BoneTransform = tempBoneTransform * weights[0]; 
+		//BoneTransform = mat4(1.0f);
+		
+	} else {
+		BoneTransform = mat4(1.0f);
 	}
 
-	vec4 newPos = BoneTransform  * (vec4(pos, 1.0f));
+	vec4 newPos = BoneTransform * (vec4(pos, 1.0f));
 	vec4 newNormal = BoneTransform  * (vec4(normal, 1.0f));
 
 
 	//To get world space, we multiply our view space by our model vector
-	vec4 worldPos = vec4(model * newPos);//(vec4(pos, 1.0f)));
+	vec4 worldPos = vec4(model * newPos);
 	
 	FragPos = vec3(worldPos);
 

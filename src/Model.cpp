@@ -237,6 +237,7 @@ void Model::loadModel(string const &path)
 	Assimp::Importer importer;
 	scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals);
 	LOG() << "2) imported scene";
+
 	// check for errors
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
 	{
@@ -251,6 +252,7 @@ void Model::loadModel(string const &path)
 
 
 	globalInverseTransform = inverse(aiMatrix4x4ToGlm(&scene->mRootNode->mTransformation));
+	
 	processBones(scene->mRootNode);
 	processNode(scene->mRootNode, -1);
 	
@@ -273,7 +275,7 @@ void Model::processBones(aiNode *node) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 
 
-		LOG(DEBUG) << "3." << i << ") adding mesh named: " << mesh->mName.C_Str() << "with ID: " << i;
+		LOG() << "3." << i << ") adding mesh named: " << mesh->mName.C_Str() << "with ID: " << i;
 
 		mMesh = processMesh(mesh);
 		mMesh.mNumVertices = mesh->mNumVertices;
@@ -285,6 +287,7 @@ void Model::processBones(aiNode *node) {
 		if (mesh->HasBones()) {
 
 			//resize bone vector to accommodate num of bones.
+			LOG() << "Mesh has " + mesh->mNumBones << " bones!";
 			mMesh.mBones.resize(mesh->mNumBones);
 
 			for (unsigned int j = 0; j < mesh->mNumBones; j++) {
@@ -301,7 +304,7 @@ void Model::processBones(aiNode *node) {
 				mMesh.mBones[j] = newBone;
 				mMesh.SetBoneByName(&mMesh.mBones[j], newBone.name);
 			}
-			LOG(DEBUG) << "processBones: found mesh with bones - assigned to bones array in mMesh.";
+			LOG() << "processBones: found mesh with bones - assigned to bones array in mMesh.";
 			bonesFound = true;
 			return;
 
@@ -312,6 +315,7 @@ void Model::processBones(aiNode *node) {
 	for (int i = 0; i < node->mNumChildren; i++) {
 		if (bonesFound == false) {
 			processBones(node->mChildren[i]);
+			bonesFound = false; //Since this variable is static, we must reset it.
 		}
 		else {
 			return;
@@ -349,7 +353,7 @@ int Model::processNode(aiNode *node, int parentNodeId)
 			
 			bonePtr->vertexWeights[k] = pair<int, float>(bonePtr->rawBone.mWeights[k].mVertexId, bonePtr->rawBone.mWeights[k].mWeight);
 			mMesh.vertexWeightArr[bonePtr->rawBone.mWeights[k].mVertexId].insert(sBoneId, bonePtr->rawBone.mWeights[k].mWeight);
-			LOG() << "for Vertex ID " << bonePtr->rawBone.mWeights[k].mVertexId << ", inserted weight " << bonePtr->rawBone.mWeights[k].mWeight << " at bone ID " << sBoneId;
+			//LOG(DEBUG) << "for Vertex ID " << bonePtr->rawBone.mWeights[k].mVertexId << ", inserted weight " << bonePtr->rawBone.mWeights[k].mWeight << " at bone ID " << sBoneId;
 		}
 	}
 
@@ -491,8 +495,13 @@ void Model::SetFinalSkelTransforms() {
 void Model::SetFinalBoneTransform(int boneId) {
 	LOG() << "Calculating transform for id " << mMesh.mBonesArrOrdered[boneId]->name;
 	this->finalTransforms[boneId] = globalInverseTransform * mMesh.mBonesArrOrdered[boneId]->globalPose * mMesh.mBonesArrOrdered[boneId]->offsetMatrix;
-	LOG() << "Final transform for bone  " << mMesh.mBonesArrOrdered[boneId]->name << " ID: " << mMesh.mBonesArrOrdered[boneId]->id << " is: " << this->finalTransforms[boneId];
-}
+	/*
+	LOG() << "\n\nGlobal pose is: \n" << mMesh.mBonesArrOrdered[boneId]->globalPose;
+	LOG() << "\n\nGlobal inverse transform: \n" << globalInverseTransform;
+	LOG() << "\n\nOffset matrix: \n" << mMesh.mBonesArrOrdered[boneId]->offsetMatrix;
+	LOG() << "\n\nFinal transform for bone  " << mMesh.mBonesArrOrdered[boneId]->name << " ID: " << mMesh.mBonesArrOrdered[boneId]->id << " is: " << this->finalTransforms[boneId];
+	*/
+	}
 
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.

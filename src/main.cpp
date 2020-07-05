@@ -86,10 +86,10 @@ int main() {
 	Texture2D texture[numModels];
 	Texture2D specularMap;
 	
-	mesh[0].loadObj("crate.obj");
-	mesh[1].loadObj("woodCrate.obj");
-	mesh[2].loadObj("robot.obj");
-	mesh[3].loadObj("floor.obj");
+	//mesh[0].loadObj("crate.obj");
+	//mesh[1].loadObj("woodCrate.obj");
+	//mesh[2].loadObj("robot.obj");
+	//mesh[3].loadObj("floor.obj");
 	
 
 	specularMap.loadTexture("container2_specular.png", true);
@@ -105,9 +105,9 @@ int main() {
 	texture[3].loadTexture("tile_floor.jpg", true);
 	
 	Texture2D nanosuitTex;
-	//nanosuitTex.loadTexture("Character Texture.png", true);
-	//AnimatedModel nanosuit(&shaderProgram, "char_running_v2.dae");
-	AnimatedModel bendingRod(&shaderProgram, "turnstick3.dae");
+	nanosuitTex.loadTexture("Character Texture.png", true);
+	AnimatedModel nanosuit(&shaderProgram, "char_running_v2.dae");
+	AnimatedModel bendingRod(&shaderProgram, "turnstick.dae");
 	//AnimatedModel nanosuitAnimated(&shaderProgram, "Character Running.obj", "Character Running.dae");
 	LOG() << "FINISHED LOADING MODELS";
 
@@ -173,10 +173,10 @@ int main() {
 
 		spotLights.setPosition(vec3(lightPos));
 		spotLights.setDirection(cameraObj.getLook());
-		pointLights.draw();
+		//pointLights.draw();
 		dirLight.draw();
 		spotLights.draw();
-		spotLights2.draw();
+		//spotLights2.draw();
 		
 
 
@@ -189,10 +189,11 @@ int main() {
 		shaderProgram.SetUniformSampler("material.textureMap", 0);
 		shaderProgram.SetUniformSampler("material.specularMap", 1);
 
-		pointLights.draw();
+		//pointLights.draw();
 
 
-		/* Some models
+		//* Some models
+		/*
 		for (int i = 1; i < numModels; i++) {
 			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
 			shaderProgram.SetUniform("model", model);
@@ -211,11 +212,15 @@ int main() {
 		}
 		*/
 
+		nanosuitTex.bind(0);
+		nanosuit.DrawModel(vec3(0.0f, 0.0f, 0.0f), -1);
+		nanosuitTex.unbind(0);
 
-		//nanosuit.DrawModel(vec3(8.0f, 2.0f, 2.0f), -1);
+		
 		texture[3].bind(0);
-		bendingRod.DrawModel(vec3(0.0f, 0.0f, 0.0f), -1);
+		bendingRod.DrawModel(vec3(0.0f, 4.0f, 4.0f), -1);
 		texture[3].unbind(0);
+		
 
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);

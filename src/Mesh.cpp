@@ -33,27 +33,6 @@ vec3 aiVector3DToGlm(const aiVector3D* from) {
 vec3 aiVector3DToGlm(aiVector3D from) {
 	return vec3(from.x, from.y, from.z);
 }
-/*
-mat4 translate(vec3 v) {
-	mat4 out = mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-	out[4].x = v.x;
-	out[4].y = v.y;
-	out[4].z = v.z;
-	return out;
-}
-
-mat3 translate(vec2 v) {
-	mat3 out = mat3(1, 0, 0, 0, 1, 0, 0, 0, 1);
-	out[3].x = v.x;
-	out[3].y = v.y;
-	return out;
-}
-*/
-/*
-
-END helper functions
-
-*/
 
 std::vector<std::string> split(std::string s, std::string t)
 {
@@ -356,25 +335,6 @@ void Mesh::TransformBone(int boneId) {
 *This requires that Local Poses are defined.
 */
 
-/*Backup
-mat4 Mesh::SetGlobalPoses(int boneId) {
-	static int* processedBones = new int[maxBoneId];
-	if (boneId == -1) { return mat4(0.0f); } // return of we've reached the root, though we should never get here.
-
-	Bone* bone = mBonesArrOrdered[boneId];
-
-
-	if (bone->parentId <= minBoneId) {
-		SetGlobalPose(boneId, bone->localPose);
-		return bone->localPose;
-	}
-
-	//multiply our new local by the local of the parent ID
-	SetGlobalPose(boneId, GenerateGlobalPose(bone->parentId) * bone->localPose);
-	return bone->globalPose;
-}*/
-
-
 mat4 Mesh::GenerateLocalPose(BonePose pose) {
 
 
@@ -390,21 +350,26 @@ mat4 Mesh::GenerateLocalPose(BonePose pose) {
 	localPose[2] = vec4(transMatrix[2], 0);
 	localPose[3] = vec4(pose.translation, 1);
 
-	LOG(DEBUG) << "Local pose: " << localPose;
+	LOG() << "GenerateLocalPose - Local pose: " << localPose;
 	return localPose;
 }
 
+//This is the one we actually call.
 void Mesh::SetGlobalPoses() {
+	LOG() << "minBoneId is " << minBoneId;
 	Bone* bone = mBonesArrOrdered[minBoneId];
+	LOG() << "Globa pose is: \n" << bone->localPose;
 	SetGlobalPose(minBoneId, bone->localPose);
 
 	for (int i = 0; i < bone->childrenId.size(); i++) {
+		//LOG() << "In SetGlobalPoses loop" << minBoneId;
 		SetGlobalPoses(bone->childrenId[i], bone->localPose);
 	}
 	//multiply our new local by the local of the parent ID
 }
 
 
+//This is a helper used in iterating.
 void Mesh::SetGlobalPoses(int boneId, mat4 parentGlobalPose) {
 	if (boneId == -1) { return; } // return of we've reached the root, though we should never get here.
 
@@ -625,7 +590,7 @@ void Mesh::initBuffers() {
 
 
 	// bone ID array
-	glVertexAttribIPointer(3, 4, GL_INT, sizeof(BoneVertexWeight), (GLvoid*)(0));
+	glVertexAttribIPointer(3, 4, GL_INT, sizeof(BoneVertexWeight), (0));
 	glEnableVertexAttribArray(3);
 
 	// vertex weight array
@@ -641,7 +606,7 @@ void Mesh::PrintVertexWeightArray() {
 	for (int i = 0; i < vertexWeightArr.size(); i++) {
 		LOG() << "Vertex ID:       " << i;
 		LOG() << "Vertex Location: " << mVertices[i].position;
-		for (int j = 0; j < 4; j++) {
+		for (int j = 0; j < MAX_BONE_PER_VERTEX; j++) {
 			LOG() << "Bone ID: " << vertexWeightArr[i].id[j];
 			LOG() << "Weight: " << vertexWeightArr[i].weight[j];
 			

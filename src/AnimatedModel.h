@@ -14,7 +14,7 @@ struct Clip {
 	aiAnimation* animation = new aiAnimation();
 	string name;
 	f32 fps;
-	uint frameCount;
+	uint* frameCount;
 	vector<Sample> samples; //The ID of the sample should correlate with the bone ID
 	bool isLooping;
 };
@@ -24,7 +24,7 @@ public:
 	AnimatedModel(ShaderProgram *shaderIn, std::string animationFile);
 	~AnimatedModel();
 	void LoadAnimationData(string const &path);
-	void  DrawModel(vec3 pos, int frame);
+	void DrawModel(vec3 pos, int frame);
 	void PrintFinalSkelTransforms();
 
 private:

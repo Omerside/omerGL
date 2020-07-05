@@ -19,7 +19,7 @@ AnimatedModel::AnimatedModel(ShaderProgram *shaderIn, std::string animationFile)
 
 
 	LOG() << "Animated model loaded.";
-	SetActiveSample(animations[0], 10);
+	SetActiveSample(animations[0], 4);
 
 }
 
@@ -68,39 +68,56 @@ void AnimatedModel::processAnimNodes(aiAnimation *animation, const aiScene *scen
 	Clip newAnimation;
 	newAnimation.animation = animation;
 	newAnimation.name = animation->mName.C_Str();
-	newAnimation.frameCount = animation->mDuration;
+	newAnimation.frameCount = new uint[animation->mNumChannels];
 	newAnimation.fps = animation->mTicksPerSecond;
 	newAnimation.isLooping = false;
 	newAnimation.samples.resize(mMesh.maxBoneId);
 
 
 	aiNodeAnim** nodeChannels = animation->mChannels;
+	
 
-
+	LOG() << "processAnimNodes : Number of animations: " << animation->mNumChannels;
 	for (unsigned int i = 0; i < animation->mNumChannels; i++){
+		newAnimation.frameCount[i] = nodeChannels[i]->mNumPositionKeys;
 		int boneId = mMesh.GetBoneByName(nodeChannels[i]->mNodeName.C_Str()).id;
-		LOG() << "AnimNode node name: " << nodeChannels[i]->mNodeName.C_Str() << " ID: " << boneId;
 		Sample sample;
-		sample.poses.resize(nodeChannels[i]->mNumRotationKeys);
+
+		LOG() << "processAnimNodes : AnimNode node name: " << nodeChannels[i]->mNodeName.C_Str() << " ID: " << boneId;
+		LOG() << "processAnimNodes :  number of poses: " << newAnimation.frameCount[i];
+
+		sample.poses.resize(newAnimation.frameCount[i]);//(nodeChannels[i]->mNumRotationKeys);
 		//We use mNumPositionKeys because, as per the assimp docs: 
 		//If there are position keys, there will also be at least one scaling and one rotation key.
-		for (unsigned int j = 0; j < nodeChannels[i]->mNumPositionKeys; j++) {
+		for (unsigned int j = 0; j < newAnimation.frameCount[i]; j++){//nodeChannels[i]->mNumPositionKeys; j++) {
+			LOG(DEBUG) << "-- number of poses: " << newAnimation.frameCount[i];
+																	  //LOG() << "--- FRAME NUMBER " << j << " TRANSFORM DATA --- ";
 			sample.poses[j].rotation = quat(nodeChannels[i]->mRotationKeys[j].mValue.x,
 				nodeChannels[i]->mRotationKeys[j].mValue.y,
 				nodeChannels[i]->mRotationKeys[j].mValue.z,
 				nodeChannels[i]->mRotationKeys[j].mValue.w);
 
+			//LOG() << "Rotation       :\n" << sample.poses[j].rotation;
+
 			sample.poses[j].rotationMat = mat4(aiMatrix3x3ToGlm(nodeChannels[i]->mRotationKeys[j].mValue.GetMatrix()));
+			//LOG() << "\n\n---Rotation Matrix:\n" << sample.poses[j].rotationMat;
 			sample.poses[j].scale = 1;
+
 			//Need to multiply inverse bind pose by animation translation
 			sample.poses[j].translation = (aiVector3DToGlm(nodeChannels[i]->mPositionKeys[j].mValue));
+			//LOG() << "\n\n---Translation :\n" << sample.poses[j].translation;
+
 			sample.poses[j].translationMat = glm::translate(sample.poses[j].translation);
+			//LOG() << "\n\n---Translation Matrix:\n" << sample.poses[j].translationMat;
+
 			sample.poses[j].transform = sample.poses[j].translationMat * sample.poses[j].rotationMat * sample.poses[j].scale;
 		}
+		
 
 		newAnimation.samples[boneId] = (sample);
+		LOG() << "Finished loading animations for node name: " << nodeChannels[i]->mNodeName.C_Str();
 	}
-
+	LOG() << "Finished loading all animation data.";
 	animations.push_back(newAnimation);
 	/**Transform vertices:	**/
 	//aiMatrix4x4 tempMatrix = node->mTransformation;// .RotationX(0.4, m);
@@ -143,13 +160,17 @@ void  AnimatedModel::DrawModel(vec3 pos, int frame) {
 
 	mat4 model = translate(mat4(), pos) * glm::scale(mat4(), scale);
 	shader->SetUniform("model", model);
-	shader->SetUniform("finalTransforms", finalTransforms);
+
+	//PrintFinalSkelTransforms();
+	//mMesh.PrintVertexWeightArray();
+	//LOG() << "Final transform for bone 2:\n" << finalTransforms[2];
+	shader->SetUniform("finalTransforms", finalTransforms, MAX_NUM_OF_BONES);
 
 
 
 
 	LOG() << "5) Calculating transformation";
-
+	
 	LOG() << "5) Drawing mesh.";
 	mMesh.bindTextures();
 	mMesh.draw();
@@ -162,18 +183,9 @@ void  AnimatedModel::DrawModel(vec3 pos, int frame) {
 void AnimatedModel::PopulateSkeletalData() {
 		
 	for (int j = 0; j < mMesh.mBones.size(); j++) {
-		//Store id->bone relationship in skeleton object
-		//skeleton.bones[0][mMesh.mBones[j].id] = &(mMesh.mBones[j]);
 
-		//Store id->bone relationship in bones array associated with mesh
-		//These values will later be changed as we discover the bone hierarchy.
 		mMesh.StoreBoneById(&(mMesh.mBones[j]), mMesh.mBones[j].id);
-			
-		//Store name->bone relationship in bones map associated with mesh
 		mMesh.SetBoneByName(&mMesh.mBones[j], mMesh.mBones[j].name);
-
-		//Store name->bone relationship in bones map associated with skeleton
-		//skeleton.bonesMap[mMesh.mBones[j].name] = &(mMesh.mBones[j]);
 
 	}
 
@@ -233,9 +245,12 @@ void AnimatedModel::SetActiveSample(Clip clip, uint frame) {
 		LOG() << "Bone ID: " << boneId;
 		LOG() << "Checking if " << mMesh.mBones[i].name << " it has poses... ";
 		if (!clip.samples[boneId].poses.empty()) {
-			
-			mMesh.SetLocalPose(boneId, mMesh.GenerateLocalPose(clip.samples[boneId].poses[frame]));
-			
+			LOG() << "FOUND POSE! " ;
+			LOG() << clip.samples[boneId].poses.size();
+			//LOG() << "Transformation matrix from clip: \n" << clip.samples[boneId].poses[frame].transform;
+			//mMesh.SetLocalPose(boneId, mMesh.GenerateLocalPose(clip.samples[boneId].poses[frame]));
+			mMesh.SetLocalPose(boneId, clip.samples[boneId].poses[frame].transform);
+
 		}
 
 	}
@@ -243,8 +258,8 @@ void AnimatedModel::SetActiveSample(Clip clip, uint frame) {
 	LOG() << "Setting global poses";
 	mMesh.SetGlobalPoses();
 	SetFinalSkelTransforms();
-	PrintFinalSkelTransforms();
-	mMesh.PrintVertexWeightArray();
+	//PrintFinalSkelTransforms();
+	//mMesh.PrintVertexWeightArray();
 
 }
 
