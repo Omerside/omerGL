@@ -15,6 +15,7 @@ struct Clip {
 	string name;
 	f32 fps;
 	uint* frameCount;
+	uint currentFrame;
 	vector<Sample> samples; //The ID of the sample should correlate with the bone ID
 	bool isLooping;
 };
@@ -24,8 +25,10 @@ public:
 	AnimatedModel(ShaderProgram *shaderIn, std::string animationFile);
 	~AnimatedModel();
 	void LoadAnimationData(string const &path);
-	void DrawModel(vec3 pos, int frame);
+	void DrawModel(vec3 pos, uint frame, double dTime = -1);
 	void PrintFinalSkelTransforms();
+	void SetActiveAnimation(string animName, bool isLooping = false);
+	void UnsetActiveAnimation();
 
 private:
 	void processAnimNodes(aiAnimation *node, const aiScene *scene);
@@ -33,9 +36,13 @@ private:
 	void PopulateSkeletalData();
 	mat4 CalcLocalPose(BonePose pose);
 	mat4 GetGlobalPose(int meshId, int boneId);
-	void SetActiveSample(Clip clip, uint frame);
+	void SetActiveSample(Clip* clip, uint frame);
+	void DrawAnimationFrame();
 
 	vector<Clip> animations;
+	Clip* activeAnimation = NULL;
+	double deltaTime = 0;
+	//uint frame = 0;
 };
 
 #endif

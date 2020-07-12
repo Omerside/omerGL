@@ -86,10 +86,10 @@ int main() {
 	Texture2D texture[numModels];
 	Texture2D specularMap;
 	
-	//mesh[0].loadObj("crate.obj");
-	//mesh[1].loadObj("woodCrate.obj");
-	//mesh[2].loadObj("robot.obj");
-	//mesh[3].loadObj("floor.obj");
+	mesh[0].loadObj("crate.obj");
+	mesh[1].loadObj("woodCrate.obj");
+	mesh[2].loadObj("robot.obj");
+	mesh[3].loadObj("floor.obj");
 	
 
 	specularMap.loadTexture("container2_specular.png", true);
@@ -107,6 +107,7 @@ int main() {
 	Texture2D nanosuitTex;
 	nanosuitTex.loadTexture("Character Texture.png", true);
 	AnimatedModel nanosuit(&shaderProgram, "char_running_v2.dae");
+	nanosuit.SetActiveAnimation("Armature.001", true);
 	//AnimatedModel bendingRod(&shaderProgram, "turnstick.dae");
 	//AnimatedModel nanosuitAnimated(&shaderProgram, "Character Running.obj", "Character Running.dae");
 	LOG() << "FINISHED LOADING MODELS";
@@ -149,7 +150,7 @@ int main() {
 		double currentTime = glfwGetTime();
 		double deltaTime = currentTime - lastTime;
 
-		LOG() << " --------------------  Delta time: " << deltaTime;
+		LOG(INFO) << " --------------------  Delta time: " << deltaTime;
 		
 		//angle += (float) radians(deltaTime * 50.0f);
 
@@ -193,7 +194,7 @@ int main() {
 
 
 		//* Some models
-		/*
+		
 		for (int i = 1; i < numModels; i++) {
 			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
 			shaderProgram.SetUniform("model", model);
@@ -210,10 +211,10 @@ int main() {
 			texture[i].unbind(0);
 
 		}
-		*/
+		
 
 		nanosuitTex.bind(0);
-		nanosuit.DrawModel(vec3(0.0f, 0.0f, 0.0f), -1);
+		nanosuit.DrawModel(vec3(0.0f, 0.0f, 0.0f), -1, deltaTime);
 		nanosuitTex.unbind(0);
 
 		
@@ -224,7 +225,7 @@ int main() {
 
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);
-		//lastTime = currentTime;
+		lastTime = currentTime;
 	
 	}
 

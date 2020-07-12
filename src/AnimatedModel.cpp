@@ -19,7 +19,8 @@ AnimatedModel::AnimatedModel(ShaderProgram *shaderIn, std::string animationFile)
 
 
 	LOG() << "Animated model loaded.";
-	SetActiveSample(animations[0], 5);
+	//SetActiveSample(&animations[0], 7);
+	//
 
 }
 
@@ -69,7 +70,7 @@ void AnimatedModel::processAnimNodes(aiAnimation *animation, const aiScene *scen
 	newAnimation.animation = animation;
 	newAnimation.name = animation->mName.C_Str();
 	newAnimation.frameCount = new uint[animation->mNumChannels];
-	newAnimation.fps = animation->mTicksPerSecond;
+	newAnimation.fps = animation->mTicksPerSecond/26;
 	newAnimation.isLooping = false;
 	newAnimation.samples.resize(mMesh.maxBoneId);
 
@@ -120,8 +121,6 @@ void AnimatedModel::processAnimNodes(aiAnimation *animation, const aiScene *scen
 	LOG() << "Finished loading all animation data.";
 	animations.push_back(newAnimation);
 	/**Transform vertices:	**/
-	//aiMatrix4x4 tempMatrix = node->mTransformation;// .RotationX(0.4, m);
-	//tempMatrix.RotationX(-1.5, tempMatrix);
 
 }
 
@@ -141,17 +140,44 @@ void AnimatedModel::AssignBonesHierarchyByNodes()
 		samples.resize(MAX_NUM_OF_BONES);
 	});
 
-	orderedSamples.resize(mMesh.maxBoneId);
-
-
-
-		
+	orderedSamples.resize(mMesh.maxBoneId);		
 	mMesh.PrintBoneHierarchy();
 	
 }
 
-void  AnimatedModel::DrawModel(vec3 pos, int frame) {
+void AnimatedModel::DrawAnimationFrame() {
+	if (!activeAnimation) return;
+	if (deltaTime < activeAnimation->fps) {
+		return;
+	}
+	else {
+		deltaTime = 0;
+	}
+	 
+	if (activeAnimation->isLooping) {
+		LOG(DEBUG) << "DrawAnimationFrame :: Current frame = " << activeAnimation->currentFrame;
+		LOG(DEBUG) << "DrawAnimationFrame :: Max frame = " << activeAnimation->frameCount[0];
+		
+		SetActiveSample(activeAnimation, activeAnimation->currentFrame);
+		if (activeAnimation->currentFrame == activeAnimation->frameCount[0]-1) {
+			activeAnimation->currentFrame = 0;
+		}
+	}
+	else if (activeAnimation->currentFrame == activeAnimation->frameCount[0]-1) {
+		activeAnimation->currentFrame = 0;
+		activeAnimation = NULL;
+		return;
+	}
+	else {
+		SetActiveSample(activeAnimation, activeAnimation->currentFrame);
+	}
 
+	activeAnimation->currentFrame++;
+}
+
+void  AnimatedModel::DrawModel(vec3 pos, uint frame, double dTime) {
+	deltaTime += dTime;
+	DrawAnimationFrame();
 	shader->SetUniformSampler("material.textureMap", 0);
 	shader->SetUniformSampler("material.specularMap", 1);
 	shader->SetUniform("material.ambient", vec3(1.0));
@@ -188,8 +214,6 @@ void AnimatedModel::PopulateSkeletalData() {
 		mMesh.SetBoneByName(&mMesh.mBones[j], mMesh.mBones[j].name);
 
 	}
-
-	
 }
 
 /*Recalculate local pose
@@ -234,23 +258,23 @@ mat4 AnimatedModel::GetGlobalPose(int meshId, int boneId) {
 	return (newLocalPose * GetGlobalPose(meshId, parentBone.id));
 }
 
-void AnimatedModel::SetActiveSample(Clip clip, uint frame) {
+void AnimatedModel::SetActiveSample(Clip* clip, uint frame) {
 
-	LOG() << "Setting local poses. Size of samples array: " << clip.samples.size();
+	LOG() << "Setting local poses. Size of samples array: " << clip->samples.size();
 	int boneId;
 
 	for (int i = 0; i < mMesh.mBones.size(); i++) {
 		
 		boneId = mMesh.mBones[i].id;
 		LOG() << "Bone ID: " << boneId;
-		LOG(INFO) << "Checking if " << mMesh.mBones[i].name << " it has poses... ";
+		LOG(DEBUG) << "Checking if " << mMesh.mBones[i].name << " it has poses... ";
 
-		if (!clip.samples[boneId].poses.empty()) {
-			LOG(INFO) << "FOUND POSE! " ;
-			mMesh.SetLocalPose(boneId, clip.samples[boneId].poses[frame].transform);
+		if (!clip->samples[boneId].poses.empty()) {
+			LOG(DEBUG) << "FOUND POSE! " ;
+			mMesh.SetLocalPose(boneId, clip->samples[boneId].poses[frame].transform);
 
 		} else {
-			LOG(INFO) << "Pose not found - setting local pose to node transform.";
+			LOG(DEBUG) << "Pose not found - setting local pose to node transform.";
 			mMesh.SetLocalPose(boneId, mMesh.mBones[i].nodeTransform);
 		}
 
@@ -259,9 +283,22 @@ void AnimatedModel::SetActiveSample(Clip clip, uint frame) {
 	LOG() << "Setting global poses";
 	mMesh.SetGlobalPoses();
 	SetFinalSkelTransforms();
-	//PrintFinalSkelTransforms();
-	//mMesh.PrintVertexWeightArray();
 
+}
+
+void AnimatedModel::SetActiveAnimation(string animName, bool isLooping) {
+	for (int i = 0; i < animations.size(); i++) {
+		if (animations[i].name == animName) {
+			LOG(DEBUG) << "SetActiveAnimation :: assigning " << animName << " as active animation.";
+			animations[i].isLooping = isLooping;
+			activeAnimation = &animations[i];
+		}
+	}
+}
+
+void AnimatedModel::UnsetActiveAnimation() {
+	activeAnimation->currentFrame = 0;
+	activeAnimation = NULL;
 }
 
 void AnimatedModel::PrintFinalSkelTransforms() {
