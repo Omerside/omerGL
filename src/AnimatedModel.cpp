@@ -19,7 +19,7 @@ AnimatedModel::AnimatedModel(ShaderProgram *shaderIn, std::string animationFile)
 
 
 	LOG() << "Animated model loaded.";
-	SetActiveSample(animations[0], 4);
+	SetActiveSample(animations[0], 5);
 
 }
 
@@ -243,14 +243,15 @@ void AnimatedModel::SetActiveSample(Clip clip, uint frame) {
 		
 		boneId = mMesh.mBones[i].id;
 		LOG() << "Bone ID: " << boneId;
-		LOG() << "Checking if " << mMesh.mBones[i].name << " it has poses... ";
+		LOG(INFO) << "Checking if " << mMesh.mBones[i].name << " it has poses... ";
+
 		if (!clip.samples[boneId].poses.empty()) {
-			LOG() << "FOUND POSE! " ;
-			LOG() << clip.samples[boneId].poses.size();
-			//LOG() << "Transformation matrix from clip: \n" << clip.samples[boneId].poses[frame].transform;
-			//mMesh.SetLocalPose(boneId, mMesh.GenerateLocalPose(clip.samples[boneId].poses[frame]));
+			LOG(INFO) << "FOUND POSE! " ;
 			mMesh.SetLocalPose(boneId, clip.samples[boneId].poses[frame].transform);
 
+		} else {
+			LOG(INFO) << "Pose not found - setting local pose to node transform.";
+			mMesh.SetLocalPose(boneId, mMesh.mBones[i].nodeTransform);
 		}
 
 	}

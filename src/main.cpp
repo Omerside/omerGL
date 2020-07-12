@@ -49,7 +49,7 @@ bool initOpenGL();
 
 
 int main() {
-	LOGCFG.level = DEBUG;
+	LOGCFG.level = INFO;
 	if (!initOpenGL()) {
 		std::cerr << "GLFW init error - aborting" << std::endl;
 		return -1;
@@ -107,7 +107,7 @@ int main() {
 	Texture2D nanosuitTex;
 	nanosuitTex.loadTexture("Character Texture.png", true);
 	AnimatedModel nanosuit(&shaderProgram, "char_running_v2.dae");
-	AnimatedModel bendingRod(&shaderProgram, "turnstick.dae");
+	//AnimatedModel bendingRod(&shaderProgram, "turnstick.dae");
 	//AnimatedModel nanosuitAnimated(&shaderProgram, "Character Running.obj", "Character Running.dae");
 	LOG() << "FINISHED LOADING MODELS";
 
@@ -218,7 +218,7 @@ int main() {
 
 		
 		texture[3].bind(0);
-		bendingRod.DrawModel(vec3(0.0f, 4.0f, 4.0f), -1);
+		//bendingRod.DrawModel(vec3(0.0f, 4.0f, 4.0f), -1);
 		texture[3].unbind(0);
 		
 

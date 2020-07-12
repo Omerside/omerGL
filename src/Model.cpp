@@ -251,7 +251,7 @@ void Model::loadModel(string const &path)
 	LOG() << "3) Beginning processing nodes...";
 
 
-	globalInverseTransform = inverse(aiMatrix4x4ToGlm(&scene->mRootNode->mTransformation));
+	globalInverseTransform = aiMatrix4x4ToGlm(&scene->mRootNode->mTransformation);
 	
 	processBones(scene->mRootNode);
 	processNode(scene->mRootNode, -1);
@@ -287,7 +287,7 @@ void Model::processBones(aiNode *node) {
 		if (mesh->HasBones()) {
 
 			//resize bone vector to accommodate num of bones.
-			LOG() << "Mesh has " + mesh->mNumBones << " bones!";
+			LOG(DEBUG) << "processBones :: Mesh has " << mesh->mNumBones << " bones!";
 			mMesh.mBones.resize(mesh->mNumBones);
 
 			for (unsigned int j = 0; j < mesh->mNumBones; j++) {
@@ -301,10 +301,11 @@ void Model::processBones(aiNode *node) {
 				newBone.rawBone = *mesh->mBones[j];
 
 				//Store bone information in mMesh
+				LOG(DEBUG) << "processBones :: Creating bone " << newBone.name << " and assigning at " << j;
 				mMesh.mBones[j] = newBone;
 				mMesh.SetBoneByName(&mMesh.mBones[j], newBone.name);
 			}
-			LOG() << "processBones: found mesh with bones - assigned to bones array in mMesh.";
+			LOG(DEBUG) << "processBones :: found mesh with bones - assigned to bones array in mMesh.";
 			bonesFound = true;
 			return;
 
@@ -316,8 +317,8 @@ void Model::processBones(aiNode *node) {
 		if (bonesFound == false) {
 			processBones(node->mChildren[i]);
 			bonesFound = false; //Since this variable is static, we must reset it.
-		}
-		else {
+
+		} else {
 			return;
 		}
 	}
@@ -359,13 +360,18 @@ int Model::processNode(aiNode *node, int parentNodeId)
 
 
 	//Assign child node/bone values.
+	LOG(INFO) << "processNode :: Attempting to assign Child node/bone vlaues for: " << node->mName.C_Str();
 	for (int i = 0; i < node->mNumChildren; i++) {
-		newNode.childrenId.push_back(processNode(node->mChildren[i], newNode.id));
 		
+		newNode.childrenId.push_back(processNode(node->mChildren[i], newNode.id));
+		LOG(INFO) << "processNode ::	Loop num " << i << ", pushed back child " << node->mChildren[i]->mName.C_Str() << " into "<< node->mName.C_Str();
 		if (bonePtr > 0) {
-			LOG() << "Assigning childrenId of node " << node->mName.C_Str() << " to bone " << bonePtr->name;
 			bonePtr->childrenId.push_back(newNode.childrenId[newNode.childrenId.size() - 1]);
 		}
+	}
+
+	if (node->mNumChildren == 0) {
+		LOG(INFO) << "processNode :: Skipped node " << newNode.name;
 	}
 
 	nodes.push_back(newNode);
