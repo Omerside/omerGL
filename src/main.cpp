@@ -62,7 +62,7 @@ int main() {
 	//model positions
 	vec3 modelPos[] = {
 		vec3(-2.5f, 1.0f, 0.0f),
-		vec3(2.5f, 1.0f, 0.0f),
+		vec3(2.5f, -1.0f, 0.0f),
 		vec3(0.0f, 0.0f, 2.0f),
 		vec3(0.0f, 0.0f, 0.0f)
 	};
@@ -88,7 +88,7 @@ int main() {
 	
 	mesh[0].loadObj("crate.obj");
 	mesh[1].loadObj("woodCrate.obj");
-	mesh[2].loadObj("robot.obj");
+	//mesh[2].loadObj("robot.obj");
 	mesh[3].loadObj("floor.obj");
 	
 
@@ -145,10 +145,12 @@ int main() {
 
 	while (!glfwWindowShouldClose(gWindow)) {
 
-		showFPS(gWindow);
+		
 
 		double currentTime = glfwGetTime();
 		double deltaTime = currentTime - lastTime;
+		showFPS(gWindow);
+
 
 		LOG(INFO) << " --------------------  Delta time: " << deltaTime;
 		
@@ -156,10 +158,13 @@ int main() {
 
 
 		glfwPollEvents();
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearStencil(0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-
-		
+		//glDisable(GL_STENCIL_TEST);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		glDisable(GL_STENCIL_TEST);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		//I need to derive the Yaw and Pitch of where I want the camera to initally face!
 		cameraObj.ExecuteMove(gYaw, gPitch);
 
@@ -196,6 +201,11 @@ int main() {
 		//* Some models
 		
 		for (int i = 1; i < numModels; i++) {
+			if (i == 1) {
+				glEnable(GL_STENCIL_TEST);
+				glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+				
+			}
 			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
 			shaderProgram.SetUniform("model", model);
 
@@ -209,6 +219,11 @@ int main() {
 			texture[i].bind(0);
 			mesh[i].draw();
 			texture[i].unbind(0);
+			if (i == 3) {
+				glStencilFunc(GL_ALWAYS, 1, 0xFF);
+				glDisable(GL_STENCIL_TEST);
+				
+			}
 
 		}
 		
@@ -226,7 +241,7 @@ int main() {
 		// Swap front and back buffers
 		glfwSwapBuffers(gWindow);
 		lastTime = currentTime;
-	
+		glDisable(GL_STENCIL_TEST);
 	}
 
 	glfwTerminate();
@@ -264,6 +279,10 @@ bool initOpenGL() {
 
 	glClearColor(0.23f, 0.38f, 0.47f, 1.0f);
 	glViewport(0, 0, gWindowWidth, gWindowHeight);
+
+
+	//The stencil test ensures undesired pixels do not reach the depth test. This saves processing time for the scene.
+	glEnable(GL_STENCIL_TEST);
 
 	// render closer vertices last
 	glEnable(GL_DEPTH_TEST); 
@@ -395,7 +414,8 @@ void showFPS(GLFWwindow * window) {
 		outs << std::fixed
 			<< APP_TITLE << "   "
 			<< "CAM POS: " << to_string(pos) << "   "
-			<< "TARGET POS: " << to_string(targ) << "  (ms)";
+			<< "TARGET POS: " << to_string(targ) << ""
+			<< "FPS: " << to_string(fps) << " ";
 		glfwSetWindowTitle(window, outs.str().c_str());
 
 		frameCount = 0;
