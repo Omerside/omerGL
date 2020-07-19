@@ -58,11 +58,16 @@ public:
 	void LoadTextures(Texture2D texInput);
 	bool LoadObjMesh(std::string file);
 	void SetScale(vec3 scaleIn);
+	void EnableOutline(vec3 colorInput, vec3 scaleInput);
+	void EnableOutline();
+	void DisableOutline();
 	void Draw(vec3 pos);
 	void DrawModel(vec3 pos);
+	void DrawOutline(vec3 pos);
 	void PrintNodeHierarchy();
 	int GetNodeCount() { return nodeCount; }
 	void loadModel(string  const &path);
+	bool getOutline() { return hasOutline; };
 
 	~Model();
 
@@ -102,11 +107,13 @@ protected:
 
 	
 	//Animation data
-	Skeleton skeleton; //Skeleton used for animation but can be loaded for non-animated models all the same.
 	mat4 globalInverseTransform; //inverse of Scene->mRootNode->mTransformation;
 	mat4 finalTransforms[MAX_NUM_OF_BONES]; //tansformation matrices to be sent to shader
 
-
+	//Outline properties
+	bool hasOutline = false;
+	vec3 outlineColor;
+	vec3 outlineSize;
 	
 
 };

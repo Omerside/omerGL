@@ -107,7 +107,10 @@ int main() {
 	Texture2D nanosuitTex;
 	nanosuitTex.loadTexture("Character Texture.png", true);
 	AnimatedModel nanosuit(&shaderProgram, "char_running_v2.dae");
+
 	nanosuit.SetActiveAnimation("Armature.001", true);
+	nanosuit.EnableOutline(vec3(5,5,5), vec3(1.1, 1, 1.1));
+	//nanosuit.SetScale(vec3(1, 1, 1));
 	//AnimatedModel bendingRod(&shaderProgram, "turnstick.dae");
 	//AnimatedModel nanosuitAnimated(&shaderProgram, "Character Running.obj", "Character Running.dae");
 	LOG() << "FINISHED LOADING MODELS";
@@ -121,7 +124,7 @@ int main() {
 	cameraObj.setMoveSpeed(0.25f);
 
 	PointLight pointLights(&shaderProgram, vec3(100.0f), vec3(100.0f), vec3(1.0f), 1.0f, 0.07f, 0.017f);
-	SpotLight spotLights(&shaderProgram, cameraObj.getLook(), vec3(100.0f), vec3(100.0f), vec3(100.0f), vec3(lightPos), cos(radians(5.0f)), cos(radians(10.0f)), 1.0f, 0.07f, 0.017f);
+	SpotLight spotLights(&shaderProgram, cameraObj.getLook(), vec3(10.50f), vec3(30.0f), vec3(30.0f), vec3(lightPos), cos(radians(5.0f)), cos(radians(10.0f)), 1.0f, 0.07f, 0.017f);
 	SpotLight spotLights2(&shaderProgram, vec3(0.0f, -1.0f, 0.0f), vec3(50.0f), vec3(100.0f), vec3(100.0f), vec3(0.0f, 10.0f, 0.0f), cos(radians(5.0f)), cos(radians(10.0f)), 1.0f, 0.07f, 0.017f);
 	DirectionalLight dirLight(&shaderProgram, vec3(0.0f, -0.9f, -0.17f), vec3(2.0f, 2.0f, 2.0f), vec3(0.6f), vec3(0.0f, 0.0f, 0.0f));
 
@@ -164,7 +167,7 @@ int main() {
 		//glDisable(GL_STENCIL_TEST);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 		glDisable(GL_STENCIL_TEST);
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		//glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		//I need to derive the Yaw and Pitch of where I want the camera to initally face!
 		cameraObj.ExecuteMove(gYaw, gPitch);
 
@@ -201,11 +204,6 @@ int main() {
 		//* Some models
 		
 		for (int i = 1; i < numModels; i++) {
-			if (i == 1) {
-				glEnable(GL_STENCIL_TEST);
-				glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-				
-			}
 			model = translate(mat4(), modelPos[i]) * scale(mat4(), modelScale[i]);
 			shaderProgram.SetUniform("model", model);
 
@@ -219,19 +217,32 @@ int main() {
 			texture[i].bind(0);
 			mesh[i].draw();
 			texture[i].unbind(0);
-			if (i == 3) {
-				glStencilFunc(GL_ALWAYS, 1, 0xFF);
-				glDisable(GL_STENCIL_TEST);
-				
-			}
 
 		}
 		
+		
+		
 
-		nanosuitTex.bind(0);
-		nanosuit.DrawModel(vec3(0.0f, 0.0f, 0.0f), -1, deltaTime);
-		nanosuitTex.unbind(0);
+		
 
+		if (nanosuit.getOutline()) {
+			glEnable(GL_STENCIL_TEST);
+			nanosuitTex.bind(0);
+			nanosuit.DrawModel(vec3(0.0f, 0.0f, 0.0f), -1, deltaTime);
+			nanosuitTex.unbind(0);
+			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+			
+			
+			nanosuit.DrawOutline(vec3(0.0f, 0.0f, 0.0f));
+			glStencilFunc(GL_ALWAYS, 1, 0xFF);
+
+			glDisable(GL_STENCIL_TEST);
+		}
+		else {
+			nanosuitTex.bind(0);
+			nanosuit.DrawModel(vec3(0.0f, 0.0f, 0.0f), -1, deltaTime);
+			nanosuitTex.unbind(0);
+		}
 		
 		texture[3].bind(0);
 		//bendingRod.DrawModel(vec3(0.0f, 4.0f, 4.0f), -1);

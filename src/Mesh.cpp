@@ -313,18 +313,6 @@ void Mesh::unbindTextures() {
 void Mesh::TransformBone(int boneId) {
 	Bone* bone = mBonesArrOrdered[boneId];
 	mat4 trans = (bone->globalPose);// *bone->invBindPose);
-
-	for (int i = 0; i < mNumVertices; i++) {
-		/*if (bone->vertexWeights[i] > 0) {
-			//LOG() << "Transforming vertex: " << mVertices[i].position.x << " " << mVertices[i].position.y << " " << mVertices[i].position.z;
-			mVertices[i].position = vec3(trans * vec4((mVertices[i].position), 1)) * bone->vertexWeights[i];//* bone->globalPose);
-			mVertices[i].normal = mVertices[i].normal;//vec3(bone->vertexWeights[i] * trans * vec4((mVertices[i].normal), 1));
-			//mVertices[i].tangent = mVertices[i].tangent;//vec3(bone->vertexWeights[i] * trans * vec4((mVertices[i].tangent), 1));
-			//mVertices[i].bitangent = mVertices[i].bitangent;//vec3(bone->vertexWeights[i] * trans * vec4((mVertices[i].bitangent), 1));
-			//LOG() << "new vertex position: " << mVertices[i].position.x << " " << mVertices[i].position.y << " " << mVertices[i].position.z;
-
-		}*/
-	}
 }
 
 

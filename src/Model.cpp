@@ -147,7 +147,6 @@ void  Model::Draw(vec3 pos){
 	mMesh.draw();
 	textures.second.unbind(0);
 	textures.first.unbind(1);
-
 }
 
 void  Model::DrawModel(vec3 pos) {
@@ -160,13 +159,6 @@ void  Model::DrawModel(vec3 pos) {
 
 	mat4 model = translate(mat4(), pos) * glm::scale(mat4(), scale);
 
-
-	/*
-	int meshSize = meshes.size();
-	for (int j = 0; j < mMesh.mBones.size(); j++) {
-		model = (mMesh.mBones[j].globalPose) * (glm::scale(mat4(), scale));
-	}*/
-
 	shader->SetUniform("model", model);
 
 	LOG() << "5) Drawing mesh.";
@@ -175,6 +167,36 @@ void  Model::DrawModel(vec3 pos) {
 	mMesh.unbindTextures();
 	LOG() << "Finished drawing mesh.";
 	
+
+}
+
+void  Model::DrawOutline(vec3 pos) {
+
+	//We assume the position provided will be identical to the position of the main model
+	//Thus, we should divide it by 2 to make it center on the model.
+	LOG(INFO) << "Outline size: " << outlineSize;
+	LOG(INFO) << "scale size: " << scale;
+	LOG(INFO) << "Final position: " << (pos - (outlineSize - scale));
+
+	shader->SetUniformSampler("material.textureMap", 0);
+	shader->SetUniformSampler("material.specularMap", 0);
+	shader->SetUniform("material.ambient", vec3(30.0));
+	shader->SetUniform("material.specular", vec3(30.0));
+	shader->SetUniform("material.shininess", vec3(35.0));
+
+	
+
+	mat4 model = translate(mat4(), vec3(pos.x, pos.y-(outlineSize.y-scale.y)*2, pos.z)) * glm::scale(mat4(), outlineSize);
+
+
+	shader->SetUniform("model", model);
+
+	LOG() << "5) Drawing mesh.";
+	//mMesh.bindTextures();
+	mMesh.draw();
+	//mMesh.unbindTextures();
+	LOG() << "Finished drawing mesh.";
+
 
 }
 
@@ -549,3 +571,20 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
 	return textures;
 }
 
+void Model::EnableOutline(vec3 colorInput, vec3 scaleInput) {
+	outlineSize = scale * scaleInput;
+	outlineColor = colorInput;
+	hasOutline = true;
+}
+
+void Model::EnableOutline() {
+	if (outlineColor == vec3(0) || outlineSize == vec3(0)){
+		LOG(DEBUG) << "Model::EnableOutline :: Cannot initialize outline of model " << directory << " without size/color.";
+		return;
+	}
+	hasOutline = true;
+}
+
+void Model::DisableOutline() {
+	hasOutline = false;
+}
