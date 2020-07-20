@@ -109,7 +109,7 @@ int main() {
 	AnimatedModel nanosuit(&shaderProgram, "char_running_v2.dae");
 
 	nanosuit.SetActiveAnimation("Armature.001", true);
-	nanosuit.EnableOutline(vec3(5,5,5), vec3(1.1, 1, 1.1));
+	nanosuit.EnableOutline(vec3(0.0f,0.0f,0.0f), vec3(1.1, 1, 1.1), vec3(1.0f, 0.0f, 0.0f));
 	//nanosuit.SetScale(vec3(1, 1, 1));
 	//AnimatedModel bendingRod(&shaderProgram, "turnstick.dae");
 	//AnimatedModel nanosuitAnimated(&shaderProgram, "Character Running.obj", "Character Running.dae");
@@ -224,25 +224,40 @@ int main() {
 		
 
 		
-
+		//Stencil testing - Let's make an outline/shadow!
 		if (nanosuit.getOutline()) {
+
+			//Enable stencil testing.. duhg
 			glEnable(GL_STENCIL_TEST);
+
+			//Whatever is drawn next will (GL_)ALWAYS have a stencil value of 1 - meaning it will be drawn.
+			glStencilFunc(GL_ALWAYS, 1, 0xFF);
+
 			nanosuitTex.bind(0);
 			nanosuit.DrawModel(vec3(0.0f, 0.0f, 0.0f), -1, deltaTime);
 			nanosuitTex.unbind(0);
+
+			//Whatever is drawn next will only only be drawn if it has a value of 0 in the stencil buffer 
 			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+
 			
 			
 			nanosuit.DrawOutline(vec3(0.0f, 0.0f, 0.0f));
-			glStencilFunc(GL_ALWAYS, 1, 0xFF);
+			//We disable depth testing too, as otherwise the outline will fail depth test and not appear in front of other objects.
+			glDisable(GL_DEPTH_TEST);
 
+			nanosuit.DrawOutlineHidden(vec3(0.0f, 0.0f, 0.0f));
+
+			//Disable stencil testing and enable depth testing to resume normal drawing.
 			glDisable(GL_STENCIL_TEST);
+			glEnable(GL_DEPTH_TEST);
 		}
 		else {
 			nanosuitTex.bind(0);
 			nanosuit.DrawModel(vec3(0.0f, 0.0f, 0.0f), -1, deltaTime);
 			nanosuitTex.unbind(0);
 		}
+
 		
 		texture[3].bind(0);
 		//bendingRod.DrawModel(vec3(0.0f, 4.0f, 4.0f), -1);

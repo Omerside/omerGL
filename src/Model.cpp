@@ -172,31 +172,30 @@ void  Model::DrawModel(vec3 pos) {
 
 void  Model::DrawOutline(vec3 pos) {
 
-	//We assume the position provided will be identical to the position of the main model
-	//Thus, we should divide it by 2 to make it center on the model.
-	LOG(INFO) << "Outline size: " << outlineSize;
-	LOG(INFO) << "scale size: " << scale;
-	LOG(INFO) << "Final position: " << (pos - (outlineSize - scale));
-
-	shader->SetUniformSampler("material.textureMap", 0);
-	shader->SetUniformSampler("material.specularMap", 0);
-	shader->SetUniform("material.ambient", vec3(30.0));
-	shader->SetUniform("material.specular", vec3(30.0));
-	shader->SetUniform("material.shininess", vec3(35.0));
-
-	
+	shader->SetUniform("material.ambient", outlineColor);
+	shader->SetUniform("isSolidColor", 1.0f);
 
 	mat4 model = translate(mat4(), vec3(pos.x, pos.y-(outlineSize.y-scale.y)*2, pos.z)) * glm::scale(mat4(), outlineSize);
 
+	shader->SetUniform("model", model);
+
+	mMesh.draw();
+	shader->SetUniform("isSolidColor", 0.0f);
+
+}
+
+void  Model::DrawOutlineHidden(vec3 pos) {
+
+	shader->SetUniform("material.ambient", outlineColorHidden);
+	shader->SetUniform("isSolidColor", 1.0f);
+
+	mat4 model = translate(mat4(), vec3(pos.x, pos.y - (outlineSize.y - scale.y) * 2, pos.z)) * glm::scale(mat4(), outlineSize);
 
 	shader->SetUniform("model", model);
 
-	LOG() << "5) Drawing mesh.";
-	//mMesh.bindTextures();
-	mMesh.draw();
-	//mMesh.unbindTextures();
-	LOG() << "Finished drawing mesh.";
 
+	mMesh.draw();
+	shader->SetUniform("isSolidColor", 0.0f);
 
 }
 
@@ -571,9 +570,10 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
 	return textures;
 }
 
-void Model::EnableOutline(vec3 colorInput, vec3 scaleInput) {
+void Model::EnableOutline(vec3 colorInput, vec3 scaleInput, vec3 outlineColorHiddenInput) {
 	outlineSize = scale * scaleInput;
 	outlineColor = colorInput;
+	outlineColorHidden = outlineColorHiddenInput;
 	hasOutline = true;
 }
 

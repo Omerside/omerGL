@@ -50,6 +50,7 @@ uniform SpotLight[10] spotLight;
 uniform PointLight[10] pointLight;
 uniform Material material;
 uniform vec3 viewPos;
+uniform float isSolidColor; // 1 == true
 
 
 vec4 CalcDirectionalLight();
@@ -61,6 +62,10 @@ vec4 spexel = texture(material.specularMap, TexCoord);
 
 void main()
 {
+	if (isSolidColor == 1.0){
+		frag_color = normalize(vec4(material.ambient, 1.0f));
+		return;
+	}
 	
 	vec4 output = vec4(1.0f);
 	output += CalcDirectionalLight();

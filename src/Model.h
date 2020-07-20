@@ -58,12 +58,13 @@ public:
 	void LoadTextures(Texture2D texInput);
 	bool LoadObjMesh(std::string file);
 	void SetScale(vec3 scaleIn);
-	void EnableOutline(vec3 colorInput, vec3 scaleInput);
+	void EnableOutline(vec3 colorInput, vec3 scaleInput, vec3 outlineColorHiddenInput);
 	void EnableOutline();
 	void DisableOutline();
 	void Draw(vec3 pos);
 	void DrawModel(vec3 pos);
 	void DrawOutline(vec3 pos);
+	void DrawOutlineHidden(vec3 pos);
 	void PrintNodeHierarchy();
 	int GetNodeCount() { return nodeCount; }
 	void loadModel(string  const &path);
@@ -113,6 +114,7 @@ protected:
 	//Outline properties
 	bool hasOutline = false;
 	vec3 outlineColor;
+	vec3 outlineColorHidden;
 	vec3 outlineSize;
 	
 
