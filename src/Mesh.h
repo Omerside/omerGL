@@ -15,6 +15,7 @@
 #include <assimp/Importer.hpp>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 using namespace glm;
 
@@ -118,7 +119,6 @@ private:
 	void CleanUnorderedBoneArrays() {  mBones.clear(); }
 	void initBuffers();
 	
-	void ChangeBoneId(int oldBoneId, int newBoneId);
 	void SetBoneByName(int boneId, string name);
 	void SetBoneByName(Bone* bone, string name);
 	void SetBoneIdByName(int id, string name);//Give the bone an ID by its name. Init assignment only.
@@ -146,8 +146,9 @@ private:
 
 	//bone data
 	vector<Bone> mBones; //unordered stack of bones
-	Bone* mBonesArrOrdered[MAX_NUM_OF_BONES]; // refers to bone objects by their ID
-	map<string, Bone*> bonesMap; // Map array for bone access by name
+	//Bone* mBonesArrOrdered[MAX_NUM_OF_BONES]; // refers to bone objects by their ID
+	vector<Bone*> mBonesArrOrdered;
+	unordered_map<string, Bone*> bonesMap; // Map array for bone access by name
 	vector<BoneVertexWeight> vertexWeightArr; // [vertex ID] = {[bone ID] = weight}
 	
 

@@ -1,6 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 #include "WorldObject.h"
+#include "ControllerDefinitions.h"
 #include "glm/glm.hpp"
 
 
@@ -15,11 +16,15 @@ public:
 	void setCameraTargetVectors(float x, float y, float z);
 	void setCameraTargetVectors(vec3 newCamTarget);
 	void setLookAt(glm::vec3& target);
+	void setLookAt();
 	void setMoveSpeed(float speed);
 	const vec3& getLook() const;
 
 	vec3 getPosition() const;
 	vec3 getTarget();
+	vec2 getYawPitch() {
+		return vec2(mYaw, mPitch);
+	};
 
 
 protected:
@@ -52,15 +57,7 @@ private:
 
 class FirstPersonCamera : public Camera {
 public:
-	const enum DIRECTION {
-		NONE,
-		FORWARD,
-		BACK,
-		LEFT,
-		RIGHT,
-		UP,
-		DOWN
-	};
+
 
 	FirstPersonCamera();
 	virtual void rotateOnCamera(float yaw, float pitch); // degrees, not radians
@@ -71,10 +68,9 @@ public:
 	void ExecuteMove(DIRECTION d);
 	void ExecuteMove(float yaw, float pitch);
 	void ExecuteMove(float yaw, float pitch, DIRECTION directionInput);
-
+	
 
 private: 
-
 	vec3 calcTargetPosRotationOnCamera(float yaw, float pitch);
 	DIRECTION direction;
 };

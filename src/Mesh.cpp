@@ -53,11 +53,19 @@ std::vector<std::string> split(std::string s, std::string t)
 Mesh::Mesh()
 	:mLoaded(false)
 {
+	mBones.reserve(MAX_NUM_OF_BONES);
+	mBonesArrOrdered.reserve(MAX_NUM_OF_BONES);
+
+	LOG(INFO) << "Set arrays to " << MAX_NUM_OF_BONES << " in Mesh.";
+	//mBonesArrOrdered = new Bone*[MAX_NUM_OF_BONES];
 }
 
 
 Mesh::Mesh(Vertex* vertices, std::vector<unsigned int> indices, std::vector<Texture> texturesIn)
 {
+	mBones.reserve(MAX_NUM_OF_BONES);
+	bonesMap.reserve(MAX_NUM_OF_BONES);
+	mBonesArrOrdered.reserve(MAX_NUM_OF_BONES);
 	mVertices = vertices;
 	mIndices = indices;
 	//mTextures = texturesIn;
@@ -344,15 +352,16 @@ mat4 Mesh::GenerateLocalPose(BonePose pose) {
 
 //This is the one we actually call.
 void Mesh::SetGlobalPoses() {
-	LOG() << "minBoneId is " << minBoneId;
+	LOG(DEBUG) << "minBoneId is " << minBoneId;
 	Bone* bone = mBonesArrOrdered[minBoneId];
-	LOG() << "Globa pose is: \n" << bone->localPose;
+	LOG(DEBUG) << "Global pose is: \n" << bone->localPose;
 	SetGlobalPose(minBoneId, bone->localPose);
 
 	for (int i = 0; i < bone->childrenId.size(); i++) {
 		//LOG() << "In SetGlobalPoses loop" << minBoneId;
 		SetGlobalPoses(bone->childrenId[i], bone->localPose);
 	}
+	LOG(DEBUG) << "SetGlobalPoses :: DONE";
 	//multiply our new local by the local of the parent ID
 }
 
@@ -371,10 +380,22 @@ void Mesh::SetGlobalPoses(int boneId, mat4 parentGlobalPose) {
 }
 
 void Mesh::SetLocalPose(int boneId, mat4 pose) {
-	if (mBonesArrOrdered[boneId] == NULL) { LOG() << "SetLocalPose: Bone not found for ID " << boneId; return; }
+	LOG(INFO) << "SetLocalPose :: bone ID: " << boneId << " array size: " << mBonesArrOrdered.size();
+	if (mBonesArrOrdered[boneId] == nullptr) { 
+		LOG(DEBUG) << "SetLocalPose: Bone not found for ID " << boneId;
+		return;
+	}
 
-	LOG(DEBUG) << "Setting local pose of bone ID " << boneId << " to " << pose;
-	mBonesArrOrdered[boneId]->localPose = pose;
+	LOG(DEBUG) << "SetLocalPose :: Setting local pose of bone ID " << boneId << " to " << pose;
+	LOG(DEBUG) << "SetLocalPose :: array value: " << mBonesArrOrdered[boneId];
+	if(mBonesArrOrdered[boneId] == nullptr) {
+		LOG(DEBUG) << "SetLocalPose :: mBonesArrOrdered at " << boneId << " is null.";
+	}
+	LOG(INFO) << "SetLocalPose :: MLOC: " << mBonesArrOrdered[boneId] << " ID: " << mBonesArrOrdered[boneId]->id;
+	//LOG(DEBUG) << "SetLocalPose :: current pose: " << mBonesArrOrdered[boneId]->localPose;
+
+	this->mBonesArrOrdered[boneId]->localPose = pose;
+	LOG(INFO) << "SetLocalPose :: DONE";
 }
 
 void Mesh::SetGlobalPose(int boneId, mat4 pose) {
@@ -382,7 +403,7 @@ void Mesh::SetGlobalPose(int boneId, mat4 pose) {
 }
 
 void Mesh::SetBonePose(int boneId, BonePose pose) {
-	if (mBonesArrOrdered[boneId] == NULL) {
+	if (mBonesArrOrdered[boneId] == nullptr) {
 		return;
 	}
 
@@ -405,64 +426,22 @@ mat4 Mesh::TransformMatrix(mat4 mat, vec4 vec) {
 	return (mat);
 }
 
-void Mesh::ChangeBoneId(int oldBoneId, int newBoneId) {
-	if(this->mBonesArrOrdered[newBoneId] != NULL){
-		LOG(WARN) << "ChangeBoneId: Reference to bone << " << this->mBonesArrOrdered[newBoneId]->name
-			<< " at location " << newBoneId << " will be overwritten. ";
-	}
-
-	//Change ID in the Bone object
-	this->mBonesArrOrdered[oldBoneId]->id = newBoneId;
-
-	//Re-assign vertex weights as they use bone ID
-	for (int i = 0; i < this->mBonesArrOrdered[oldBoneId]->vertexWeights.size(); i++) {
-		for (int j = 0; j < MAX_BONE_PER_VERTEX; j++) {
-
-			//Vertex ID as it is stored in the bone.
-			int vertexId = this->mBonesArrOrdered[oldBoneId]->vertexWeights[i].first;
-			float weight = this->mBonesArrOrdered[oldBoneId]->vertexWeights[i].second;
-
-			//Iterate over the 4 possible weights affecting the vertex
-			if (vertexWeightArr[vertexId].id[j] == oldBoneId) {
-				LOG() << "Old vertex ID and value: " << vertexWeightArr[vertexId].id[j] << " " << vertexWeightArr[vertexId].weight[j];
-				//If the bone ID in vertexWeightArr matches the bone ID we are changing, change it:
-				vertexWeightArr[vertexId].id[j] = newBoneId;
-				LOG() << "New vertex ID and value: " << vertexWeightArr[vertexId].id[j] << " " << vertexWeightArr[vertexId].weight[j];
-			}
-		}
-	}
-
-	//Change reference in child nodes
-	for (int i = 0; i < this->mBonesArrOrdered[oldBoneId]->childrenId.size(); i++) {
-		mBonesArrOrdered[this->mBonesArrOrdered[oldBoneId]->childrenId[i]]->parentId = newBoneId;
-	}
-
-	//Change reference in parent node
-	if (this->mBonesArrOrdered[oldBoneId]->parentId > 0) {
-		replace(mBonesArrOrdered[this->mBonesArrOrdered[oldBoneId]->parentId]->childrenId.begin(),
-			mBonesArrOrdered[this->mBonesArrOrdered[oldBoneId]->parentId]->childrenId.end(),
-			oldBoneId, newBoneId);
-	}
-
-
-	//Change ID in the reference array.
-	StoreBoneById(mBonesArrOrdered[oldBoneId], newBoneId);
-
-}
-
 void Mesh::SetBoneIdByName(int id, string name) {
-	this->bonesMap[name]->id = id;
-	this->StoreBoneById(this->bonesMap[name], id);
+	bonesMap[name]->id = id;
+	StoreBoneById(this->bonesMap[name], id);
 }
 
 void Mesh::StoreBoneById(Bone* bone, int id) {
-	this->mBonesArrOrdered[id] = bone;
-	if (this->maxBoneId <= id) { this->maxBoneId = (id + 1); LOG(DEBUG) << "New MAX bone ID is " << (id + 1); }
-	if (this->minBoneId > id) { this->minBoneId = id; }
+	LOG(DEBUG) << "StoreBoneById :: Storing bone name " << bone->name << " by ID " << id;
+	mBonesArrOrdered[id] = bone;
+	if (maxBoneId <= id) { maxBoneId = (id + 1); LOG(DEBUG) << "New MAX bone ID is " << (id + 1); }
+	if (minBoneId > id) { minBoneId = id; }
+
+	LOG(INFO) << "StoreBoneById :: MLOC: << " << &mBonesArrOrdered[id] << " Ref ID: " << mBonesArrOrdered[id]->id << " - maxBone ID: " << maxBoneId << " - minBone ID: " << minBoneId;
 }
 
 Bone Mesh::GetBoneById(int id) {
-	if (mBonesArrOrdered[id] == NULL) { return *(new Bone()); }//Return empty bone
+	if (mBonesArrOrdered[id] == nullptr) { return *(new Bone()); }//Return empty bone
 	return *(mBonesArrOrdered[id]);
 	
 }
@@ -491,7 +470,7 @@ void Mesh::InsertBone(Bone boneIn) {
 }
 
 void Mesh::SetBoneByName(int boneId, string name) {
-	if (mBonesArrOrdered[boneId] == NULL) {
+	if (mBonesArrOrdered[boneId] == nullptr) {
 		LOG(WARN) << "SetBoneByName: bone ID " << boneId << " does not refer to a bone in mBonesArrOrdered. ";
 		return;
 	}
@@ -500,7 +479,7 @@ void Mesh::SetBoneByName(int boneId, string name) {
 }
 
 void Mesh::SetBoneByName(Bone* bone, string name) {
-	if (bone == NULL) {
+	if (bone == nullptr) {
 		LOG(WARN) << "SetBoneByName: cannot set reference to empty bone.";
 		return;
 	}
@@ -516,24 +495,24 @@ void Mesh::DrawModel() {
 
 void Mesh::draw() {
 	if (!mLoaded) { 
-		LOG(ERROR) << "Mesh not loaded.";
+		LOG(ERR) << "Mesh not loaded.";
 		return; 
 	}
 	
 
-	LOG() << "     - Binding vertex array object number " << this->mVAO;
+	LOG(DEBUG) << "     - Binding vertex array object number " << this->mVAO;
 	glBindVertexArray(this->mVAO);
 
 	
 	if (mIndices.size() > 0) {
 
-		LOG() << "     - Drawing " << mIndices.size() << " indices.";
+		LOG(INFO) << "     - Drawing " << mNumVertices << " indices.";
 		glDrawArrays(GL_TRIANGLES, 0, mNumVertices);
-		//glDrawElements(GL_TRIANGLES, mIndices.size(), GL_ELEMENT_ARRAY_BUFFER, 0);
+		//glDrawElements(GL_TRIANGLES, mNumVertices, GL_ELEMENT_ARRAY_BUFFER, 0);
 		
 	}
 	else {
-		LOG() << "     - Drawing " << mNumVertices << " vertices.";
+		LOG(DEBUG) << "     - Drawing " << mNumVertices << " vertices.";
 		glDrawArrays(GL_TRIANGLES, 0, mNumVertices);
 	}
 

@@ -275,8 +275,9 @@ void Model::loadModel(string const &path)
 	globalInverseTransform = aiMatrix4x4ToGlm(&scene->mRootNode->mTransformation);
 	
 	processBones(scene->mRootNode);
-	processNode(scene->mRootNode, -1);
-	
+	int parentNode = -1;
+	processNode(scene->mRootNode, -1, &parentNode);
+	LOG(INFO) << "parent node at the end of this mess: " << parentNode;
 	
 	
 	LOG() << "Number of meshes processed: " << meshes.size();
@@ -296,7 +297,7 @@ void Model::processBones(aiNode *node) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 
 
-		LOG() << "3." << i << ") adding mesh named: " << mesh->mName.C_Str() << "with ID: " << i;
+		LOG(DEBUG) << "3." << i << ") adding mesh named: " << mesh->mName.C_Str() << "with ID: " << i;
 
 		mMesh = processMesh(mesh);
 		mMesh.mNumVertices = mesh->mNumVertices;
@@ -350,14 +351,14 @@ void Model::processBones(aiNode *node) {
 
 // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
 // returns node ID
-int Model::processNode(aiNode *node, int parentNodeId)
+int Model::processNode(aiNode *node, int parentNodeId, int* sBoneId)
 {
-	static int sBoneId = parentNodeId;
-	sBoneId++;
+	//sBoneId = static node ID beginning with parent node (parentNodeId);
+	(*sBoneId)++;
 
 	Node newNode;	
 	newNode.name = node->mName.C_Str();
-	newNode.id = sBoneId;
+	newNode.id = *sBoneId;
 	newNode.parentId = parentNodeId;
 	newNode.transform = aiMatrix4x4ToGlm(&node->mTransformation);
 	nodeCount++;
@@ -366,7 +367,7 @@ int Model::processNode(aiNode *node, int parentNodeId)
 
 	if (bonePtr > 0) {
 
-		mMesh.SetBoneIdByName(sBoneId, newNode.name);
+		mMesh.SetBoneIdByName(*sBoneId, newNode.name);
 		mMesh.bonesMap[newNode.name]->nodeTransform = newNode.transform;
 		bonePtr->parentId = parentNodeId;
 
@@ -374,30 +375,29 @@ int Model::processNode(aiNode *node, int parentNodeId)
 		for (unsigned int k = 0; k < (bonePtr->rawBone.mNumWeights); k++) {
 			
 			bonePtr->vertexWeights[k] = pair<int, float>(bonePtr->rawBone.mWeights[k].mVertexId, bonePtr->rawBone.mWeights[k].mWeight);
-			mMesh.vertexWeightArr[bonePtr->rawBone.mWeights[k].mVertexId].insert(sBoneId, bonePtr->rawBone.mWeights[k].mWeight);
+			mMesh.vertexWeightArr[bonePtr->rawBone.mWeights[k].mVertexId].insert(*sBoneId, bonePtr->rawBone.mWeights[k].mWeight);
 			//LOG(DEBUG) << "for Vertex ID " << bonePtr->rawBone.mWeights[k].mVertexId << ", inserted weight " << bonePtr->rawBone.mWeights[k].mWeight << " at bone ID " << sBoneId;
 		}
 	}
 
 
 	//Assign child node/bone values.
-	LOG(INFO) << "processNode :: Attempting to assign Child node/bone vlaues for: " << node->mName.C_Str();
+	LOG(DEBUG) << "processNode :: Attempting to assign Child node/bone vlaues for: " << node->mName.C_Str();
 	for (int i = 0; i < node->mNumChildren; i++) {
 		
-		newNode.childrenId.push_back(processNode(node->mChildren[i], newNode.id));
-		LOG(INFO) << "processNode ::	Loop num " << i << ", pushed back child " << node->mChildren[i]->mName.C_Str() << " into "<< node->mName.C_Str();
+		newNode.childrenId.push_back(processNode(node->mChildren[i], newNode.id, sBoneId));
+		LOG(DEBUG) << "processNode ::	Loop num " << i << ", pushed back child " << node->mChildren[i]->mName.C_Str() << " into "<< node->mName.C_Str();
 		if (bonePtr > 0) {
 			bonePtr->childrenId.push_back(newNode.childrenId[newNode.childrenId.size() - 1]);
 		}
 	}
 
 	if (node->mNumChildren == 0) {
-		LOG(INFO) << "processNode :: Skipped node " << newNode.name;
+		LOG(DEBUG) << "processNode :: Skipped node " << newNode.name;
 	}
 
 	nodes.push_back(newNode);
 	nodesMap[newNode.name] = nodes.size()-1;
-	
 	return newNode.id;
 }
 
@@ -496,17 +496,17 @@ Mesh Model::processMesh(aiMesh *mesh)
 void Model::PrintNodeHierarchy() {
 	for (int i = 0; i < nodes.size(); i++) {
 
-			LOG() << "Node name:   " << nodes[i].name;
+			LOG(INFO) << "Node name:   " << nodes[i].name;
 			if (nodes[i].hasBone) {
 				LOG() << "Correlates to bone.";
 			}
 
-			LOG() << "   ID:       " << nodes[i].id;
-			LOG() << "   Parent:   " << nodes[i].parentId;
+			LOG(INFO) << "   ID:       " << nodes[i].id;
+			LOG(INFO) << "   Parent:   " << nodes[i].parentId;
 
 			int size = nodes[i].childrenId.size();
 			for (int j = 0; j < size; j++) {
-				LOG() << "   Child: " << nodes[i].childrenId[j];
+				LOG(INFO) << "   Child: " << nodes[i].childrenId[j];
 			}
 
 	}
@@ -520,7 +520,7 @@ void Model::SetFinalSkelTransforms() {
 }
 
 void Model::SetFinalBoneTransform(int boneId) {
-	LOG() << "Calculating transform for id " << mMesh.mBonesArrOrdered[boneId]->name;
+	LOG(DEBUG) << "Calculating transform for id " << mMesh.mBonesArrOrdered[boneId]->name;
 	this->finalTransforms[boneId] = globalInverseTransform * mMesh.mBonesArrOrdered[boneId]->globalPose * mMesh.mBonesArrOrdered[boneId]->offsetMatrix;
 	/*
 	LOG() << "\n\nGlobal pose is: \n" << mMesh.mBonesArrOrdered[boneId]->globalPose;

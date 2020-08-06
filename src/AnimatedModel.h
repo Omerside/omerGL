@@ -27,7 +27,7 @@ public:
 	void LoadAnimationData(string const &path);
 	void DrawModel(vec3 pos, uint frame, double dTime = -1);
 	void PrintFinalSkelTransforms();
-	void SetActiveAnimation(string animName, bool isLooping = false);
+	bool SetActiveAnimation(string animName, bool isLooping = false);
 	void UnsetActiveAnimation();
 
 private:
@@ -37,10 +37,12 @@ private:
 	mat4 CalcLocalPose(BonePose pose);
 	mat4 GetGlobalPose(int meshId, int boneId);
 	void SetActiveSample(Clip* clip, uint frame);
+	void SetActiveSample(Clip clip, uint frame);
 	void DrawAnimationFrame();
 
 	vector<Clip> animations;
 	Clip* activeAnimation = NULL;
+	int activeAnimationID = -1;
 	double deltaTime = 0;
 	//uint frame = 0;
 };

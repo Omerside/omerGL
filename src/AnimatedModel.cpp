@@ -14,8 +14,8 @@ AnimatedModel::AnimatedModel(ShaderProgram *shaderIn, std::string animationFile)
 	LoadAnimationData(animationFile);
 
 	//Assign bone hierarchy for animation
-	//AssignBonesHierarchyByNodes();
-	PrintNodeHierarchy();
+
+	//PrintNodeHierarchy();
 
 
 	LOG() << "Animated model loaded.";
@@ -78,14 +78,14 @@ void AnimatedModel::processAnimNodes(aiAnimation *animation, const aiScene *scen
 	aiNodeAnim** nodeChannels = animation->mChannels;
 	
 
-	LOG() << "processAnimNodes : Number of animations: " << animation->mNumChannels;
+	LOG(DEBUG) << "processAnimNodes : Number of animations: " << animation->mNumChannels;
 	for (unsigned int i = 0; i < animation->mNumChannels; i++){
 		newAnimation.frameCount[i] = nodeChannels[i]->mNumPositionKeys;
 		int boneId = mMesh.GetBoneByName(nodeChannels[i]->mNodeName.C_Str()).id;
 		Sample sample;
 
-		LOG() << "processAnimNodes : AnimNode node name: " << nodeChannels[i]->mNodeName.C_Str() << " ID: " << boneId;
-		LOG() << "processAnimNodes :  number of poses: " << newAnimation.frameCount[i];
+		LOG(DEBUG) << "processAnimNodes : AnimNode node name: " << nodeChannels[i]->mNodeName.C_Str() << " ID: " << boneId;
+		LOG(DEBUG) << "processAnimNodes :  number of poses: " << newAnimation.frameCount[i];
 
 		sample.poses.resize(newAnimation.frameCount[i]);//(nodeChannels[i]->mNumRotationKeys);
 		//We use mNumPositionKeys because, as per the assimp docs: 
@@ -112,14 +112,16 @@ void AnimatedModel::processAnimNodes(aiAnimation *animation, const aiScene *scen
 			//LOG() << "\n\n---Translation Matrix:\n" << sample.poses[j].translationMat;
 
 			sample.poses[j].transform = sample.poses[j].translationMat * sample.poses[j].rotationMat * sample.poses[j].scale;
+			//LOG(INFO) << "\n\n---transform Matrix:\n" << sample.poses[j].transform;
 		}
 		
 
 		newAnimation.samples[boneId] = (sample);
-		LOG() << "Finished loading animations for node name: " << nodeChannels[i]->mNodeName.C_Str();
+		LOG(DEBUG) << "Finished loading animations for node name: " << nodeChannels[i]->mNodeName.C_Str() << " mloc: " << &newAnimation.samples[boneId];
 	}
-	LOG() << "Finished loading all animation data.";
+	
 	animations.push_back(newAnimation);
+	LOG(INFO) << "Finished loading all animation data. mloc: " << &animations.back();
 	/**Transform vertices:	**/
 
 }
@@ -146,6 +148,41 @@ void AnimatedModel::AssignBonesHierarchyByNodes()
 }
 
 void AnimatedModel::DrawAnimationFrame() {
+	if (activeAnimationID == -1) {
+		LOG(INFO) << "activeAnimationFrame is zero - returning.";
+		return;
+	}
+	if (deltaTime < animations[activeAnimationID].fps) {
+		LOG(INFO) << "delta time is less than the fps - returning.";
+		return;
+	}
+	else {
+		deltaTime = 0;
+	}
+
+	if (animations[activeAnimationID].isLooping) {
+		LOG(INFO) << "DrawAnimationFrame :: Current frame = " << animations[activeAnimationID].currentFrame;
+		LOG(INFO) << "DrawAnimationFrame :: Max frame = " << animations[activeAnimationID].frameCount[0];
+
+		SetActiveSample(&animations[activeAnimationID], animations[activeAnimationID].currentFrame);
+		if (animations[activeAnimationID].currentFrame == animations[activeAnimationID].frameCount[0] - 1) {
+			animations[activeAnimationID].currentFrame = 0;
+		}
+	}
+	else if (animations[activeAnimationID].currentFrame == animations[activeAnimationID].frameCount[0] - 1) {
+		animations[activeAnimationID].currentFrame = 0;
+		activeAnimationID = -1;
+		return;
+	}
+	else {
+		LOG(INFO) << "Animation found but it does not loop.";
+		SetActiveSample(&animations[activeAnimationID], animations[activeAnimationID].currentFrame);
+	}
+
+	animations[activeAnimationID].currentFrame++;
+}
+
+/*void AnimatedModel::DrawAnimationFrame() {
 	if (!activeAnimation) return;
 	if (deltaTime < activeAnimation->fps) {
 		return;
@@ -173,19 +210,24 @@ void AnimatedModel::DrawAnimationFrame() {
 	}
 
 	activeAnimation->currentFrame++;
-}
+}*/
 
 void  AnimatedModel::DrawModel(vec3 pos, uint frame, double dTime) {
 	deltaTime += dTime;
+	LOG(INFO) << "Entering drawAnimationFrame for " << directory;
 	DrawAnimationFrame();
+
+	LOG(INFO) << "SETTING SHADER VALUES" << directory;
 	shader->SetUniformSampler("material.textureMap", 0);
 	shader->SetUniformSampler("material.specularMap", 1);
 	shader->SetUniform("material.ambient", vec3(1.0));
 	shader->SetUniform("material.specular", vec3(1.0));
 	shader->SetUniform("material.shininess", vec3(35.0));
 
+	LOG(INFO) << "SETTING MODE VALUE";
 	mat4 model = translate(mat4(), pos) * glm::scale(mat4(), scale);
 	shader->SetUniform("model", model);
+	LOG(DEBUG) << "Model information:  " << model;
 
 	//PrintFinalSkelTransforms();
 	//mMesh.PrintVertexWeightArray();
@@ -260,45 +302,81 @@ mat4 AnimatedModel::GetGlobalPose(int meshId, int boneId) {
 
 void AnimatedModel::SetActiveSample(Clip* clip, uint frame) {
 
-	LOG() << "Setting local poses. Size of samples array: " << clip->samples.size();
+	LOG(INFO) << "Setting local poses. Size of samples array: " << clip->samples.size() << " - FRAME NUM: " << frame;
+	LOG(INFO) << "Clip data: " << clip->name;
 	int boneId;
 
 	for (int i = 0; i < mMesh.mBones.size(); i++) {
 		
 		boneId = mMesh.mBones[i].id;
-		LOG() << "Bone ID: " << boneId;
-		LOG(DEBUG) << "Checking if " << mMesh.mBones[i].name << " it has poses... ";
 
+		LOG(INFO) << "Checking if " << mMesh.mBones[i].name << " it has poses...  Bone ID: " << boneId;
 		if (!clip->samples[boneId].poses.empty()) {
-			LOG(DEBUG) << "FOUND POSE! " ;
+			LOG(INFO) << "setting local pose (size: " << clip->samples[boneId].poses[frame].transform << ")";
+			 
 			mMesh.SetLocalPose(boneId, clip->samples[boneId].poses[frame].transform);
 
 		} else {
+			LOG(INFO) << "Pose not found - setting local pose to node transform.";
+			mMesh.SetLocalPose(boneId, mMesh.mBones[i].nodeTransform);
+		}
+
+	}
+
+	LOG(INFO) << "Setting global poses";
+	mMesh.SetGlobalPoses();
+	SetFinalSkelTransforms();
+
+}
+
+void AnimatedModel::SetActiveSample(Clip clip, uint frame) {
+
+	LOG(DEBUG) << "Setting local poses. Size of samples array: " << clip.samples.size();
+	LOG(DEBUG) << "Clip data: " << clip.name;
+	int boneId;
+
+	for (int i = 0; i < mMesh.mBones.size(); i++) {
+
+		boneId = mMesh.mBones[i].id;
+
+		LOG(DEBUG) << "Checking if " << mMesh.mBones[i].name << " it has poses...  Bone ID: " << boneId;
+		if (!clip.samples[boneId].poses.empty()) {
+			LOG(DEBUG) << "setting local pose (size: " << clip.samples[boneId].poses[frame].transform << ")";
+
+			mMesh.SetLocalPose(boneId, clip.samples[boneId].poses[frame].transform);
+
+		}
+		else {
 			LOG(DEBUG) << "Pose not found - setting local pose to node transform.";
 			mMesh.SetLocalPose(boneId, mMesh.mBones[i].nodeTransform);
 		}
 
 	}
 
-	LOG() << "Setting global poses";
+	LOG(DEBUG) << "Setting global poses";
 	mMesh.SetGlobalPoses();
 	SetFinalSkelTransforms();
 
 }
 
-void AnimatedModel::SetActiveAnimation(string animName, bool isLooping) {
+bool AnimatedModel::SetActiveAnimation(string animName, bool isLooping) {
 	for (int i = 0; i < animations.size(); i++) {
 		if (animations[i].name == animName) {
-			LOG(DEBUG) << "SetActiveAnimation :: assigning " << animName << " as active animation.";
+			LOG(DEBUG) << "SetActiveAnimation :: assigning " << animName << " as active animation for ";
 			animations[i].isLooping = isLooping;
-			activeAnimation = &animations[i];
+			animations[i].currentFrame = 0;
+			//activeAnimation = &animations[i];
+			activeAnimationID = i;
+			LOG(DEBUG) << "SetActiveAnimation :: SET " << animations[activeAnimationID].name << " as active animation.";
 		}
 	}
 }
 
 void AnimatedModel::UnsetActiveAnimation() {
-	activeAnimation->currentFrame = 0;
-	activeAnimation = NULL;
+	animations[activeAnimationID].currentFrame = 0;
+	activeAnimationID = -1;
+	//activeAnimation->currentFrame = 0;
+	//activeAnimation = NULL;
 }
 
 void AnimatedModel::PrintFinalSkelTransforms() {

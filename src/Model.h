@@ -69,6 +69,7 @@ public:
 	int GetNodeCount() { return nodeCount; }
 	void loadModel(string  const &path);
 	bool getOutline() { return hasOutline; };
+	string GetDirectory() {	return directory;}
 
 	~Model();
 
@@ -78,7 +79,7 @@ protected:
 	bool LoadTextures(string file, bool isSpecMap = false);
 	bool LoadObjMeshes(string file);
 	vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName);
-	int processNode(aiNode *node, int boneId);
+	int processNode(aiNode *node, int boneId, int* sBoneId);
 	Mesh processMesh(aiMesh *mesh);
 	void processBones(aiNode *node);
 	void SetFinalSkelTransforms();

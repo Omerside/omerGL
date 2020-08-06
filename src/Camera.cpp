@@ -56,11 +56,15 @@ glm::mat4 Camera::getViewMatrix() const {
 
 
 void Camera::setLookAt(vec3& target) {
+
 	mTargetPos = target;
-	mLook = normalize(getPosition() - mTargetPos);//target);
-	vec3 mRight = glm::normalize(glm::cross(mLook, vec3(0.0f, 1.0f, 0.0f)));
-	
+	mLook = normalize(getPosition() - mTargetPos);
 }
+
+void Camera::setLookAt() {
+	mLook = normalize(getPosition() - mTargetPos);
+}
+
 
  const vec3& Camera::getLook() const {
 	return mLook;
@@ -152,6 +156,7 @@ vec3 FirstPersonCamera::calcTargetPosRotationOnCamera(float yaw, float pitch) {
 	y = sin(mPitch);
 	z = cos(mPitch)*sin(mYaw);
 
+	LOG(DEBUG) << "Rotation on camera is: " << (normalize(vec3(x, y, z))) + mPosition;
 	return (normalize(vec3(x, y, z))) + mPosition;
 
 }

@@ -20,7 +20,7 @@ enum typelog {
 	DEBUG,
 	INFO,
 	WARN,
-	ERROR
+	ERR
 };
 
 struct structlog {
@@ -51,6 +51,16 @@ public:
 	LOG &operator<<(const T &msg) {
 		if (msglevel >= LOGCFG.level) {
 			cout << msg;
+			opened = true;
+		}
+		return *this;
+	}
+
+	LOG& operator<<(const glm::vec2 &msg) {
+		std::cout.unsetf(std::ios::floatfield);
+		std::cout.precision(2);
+		if (msglevel >= LOGCFG.level) {
+			cout << "(" << msg.x << ", " << msg.y <<  ")" << "\n";
 			opened = true;
 		}
 		return *this;
@@ -109,7 +119,7 @@ private:
 		case DEBUG: label = "DEBUG"; break;
 		case INFO:  label = "INFO "; break;
 		case WARN:  label = "WARN "; break;
-		case ERROR: label = "ERROR"; break;
+		case ERR: label = "ERROR"; break;
 		}
 		return label;
 	}

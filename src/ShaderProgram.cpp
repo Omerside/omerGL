@@ -131,25 +131,30 @@ GLint ShaderProgram::GetUniformLocation(const GLchar* name) {
 
 void ShaderProgram::SetUniform(const GLchar* name, const glm::vec2& v) {
 	GLint loc = GetUniformLocation(name);
+	LOG(INFO) << "Setting uniform value: " << name << " to " << v;
 	glUniform2f(loc, v.x, v.y);
 }
 
 void ShaderProgram::SetUniform(const GLchar* name, const glm::vec3& v) {
+	LOG(INFO) << "Setting uniform value: " << name << " to " << v;
 	GLint loc = GetUniformLocation(name);
 	glUniform3f(loc, v.x, v.y, v.z);
 }
 void ShaderProgram::SetUniform(const GLchar* name, const glm::vec4& v) {
+	LOG(INFO) << "Setting uniform value: " << name << " to " << v;
 	GLint loc = GetUniformLocation(name);
 	glUniform4f(loc, v.x, v.y, v.z, v.x);
 }
 
 void ShaderProgram::SetUniform(const GLchar* name, const glm::mat4& m) {
+	LOG(INFO) << "Setting uniform value: " << name << " to " << m;
 	GLint loc = GetUniformLocation(name);
 	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(m));
 }
 
 void ShaderProgram::SetUniform(const GLchar* name, const glm::mat4* mArr, int count) {
 	GLint loc = GetUniformLocation(name);
+	LOG(INFO) << "Setting uniform value: " << name;
 	glUniformMatrix4fv(loc, count, GL_FALSE, glm::value_ptr(mArr[0]));
 }
 
@@ -158,12 +163,14 @@ GLuint ShaderProgram::getProgram()const {
 }
 
 void ShaderProgram::SetUniformSampler(const GLchar* name, const GLint& slot) {
+	LOG(INFO) << "Setting uniform value: " << name << " to " << slot;
 	glActiveTexture(GL_TEXTURE0 + slot);
 	GLint loc = GetUniformLocation(name);
 	glUniform1i(loc, slot);
 }
 
 void ShaderProgram::SetUniform(const GLchar* name, const GLfloat& f) {
+	LOG(INFO) << "Setting uniform value: " << name << " to " << f;
 	GLint loc = GetUniformLocation(name);
 	glUniform1f(loc, f);
 }

@@ -17,6 +17,7 @@ Texture2D::~Texture2D() {
 
 bool Texture2D::loadTexture(const string& filename, bool generateMipMaps, bool flipImageData) {
 	int width, height, components;
+	filePath = filename;
 	unsigned char* imageData = stbi_load(filename.c_str(), &width, &height, &components, STBI_rgb_alpha);
 
 	if (imageData == NULL) {
