@@ -10,6 +10,7 @@
 #include "InputController.h"
 #include "PlayerController.h"
 #include "EntityController.h"
+#include "LightController.h"
 #include "ControllerDefinitions.h"
 
 
@@ -40,6 +41,7 @@ private:
 	InputController* inputCtrl;
 	PlayerController* playerCtrl;
 	EntityController* entityCtrl;
+	LightController* lightCtrl;
 	GLFWwindow* gWindow;
 
 	//misc properties
@@ -80,6 +82,21 @@ public:
 		bool isOutlined = false,
 		vec3 outlineColor = vec3(0),
 		vec3 outlineColorHidden = vec3(0)
+	);
+
+	//Load a light, return light ID.
+	int LoadLight(
+		LightTypes type,
+		vec3 ambient,
+		vec3 diffuse,
+		vec3 specular,
+		vec3 pos = vec3(0, 3, 0),
+		vec3 direction = vec3(.5, -1, .5),
+		float cosInnerConeIn = cos(radians(5.0f)),
+		float cosOuterConeIn = cos(radians(10.0f)),
+		float constantIn = 1.0f,
+		float linearIn = 0.07f,
+		float exponentIn = 0.017f
 	);
 
 	void Update();

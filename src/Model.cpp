@@ -277,7 +277,7 @@ void Model::loadModel(string const &path)
 	processBones(scene->mRootNode);
 	int parentNode = -1;
 	processNode(scene->mRootNode, -1, &parentNode);
-	LOG(INFO) << "parent node at the end of this mess: " << parentNode;
+	LOG(DEBUG) << "parent node at the end of this mess: " << parentNode;
 	
 	
 	LOG() << "Number of meshes processed: " << meshes.size();

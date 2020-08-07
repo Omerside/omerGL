@@ -56,7 +56,7 @@ Mesh::Mesh()
 	mBones.reserve(MAX_NUM_OF_BONES);
 	mBonesArrOrdered.reserve(MAX_NUM_OF_BONES);
 
-	LOG(INFO) << "Set arrays to " << MAX_NUM_OF_BONES << " in Mesh.";
+	LOG(DEBUG) << "Set arrays to " << MAX_NUM_OF_BONES << " in Mesh.";
 	//mBonesArrOrdered = new Bone*[MAX_NUM_OF_BONES];
 }
 
@@ -380,7 +380,7 @@ void Mesh::SetGlobalPoses(int boneId, mat4 parentGlobalPose) {
 }
 
 void Mesh::SetLocalPose(int boneId, mat4 pose) {
-	LOG(INFO) << "SetLocalPose :: bone ID: " << boneId << " array size: " << mBonesArrOrdered.size();
+	LOG(DEBUG) << "SetLocalPose :: bone ID: " << boneId << " array size: " << mBonesArrOrdered.size();
 	if (mBonesArrOrdered[boneId] == nullptr) { 
 		LOG(DEBUG) << "SetLocalPose: Bone not found for ID " << boneId;
 		return;
@@ -391,11 +391,11 @@ void Mesh::SetLocalPose(int boneId, mat4 pose) {
 	if(mBonesArrOrdered[boneId] == nullptr) {
 		LOG(DEBUG) << "SetLocalPose :: mBonesArrOrdered at " << boneId << " is null.";
 	}
-	LOG(INFO) << "SetLocalPose :: MLOC: " << mBonesArrOrdered[boneId] << " ID: " << mBonesArrOrdered[boneId]->id;
+	LOG(DEBUG) << "SetLocalPose :: MLOC: " << mBonesArrOrdered[boneId] << " ID: " << mBonesArrOrdered[boneId]->id;
 	//LOG(DEBUG) << "SetLocalPose :: current pose: " << mBonesArrOrdered[boneId]->localPose;
 
 	this->mBonesArrOrdered[boneId]->localPose = pose;
-	LOG(INFO) << "SetLocalPose :: DONE";
+	LOG(DEBUG) << "SetLocalPose :: DONE";
 }
 
 void Mesh::SetGlobalPose(int boneId, mat4 pose) {
@@ -437,7 +437,7 @@ void Mesh::StoreBoneById(Bone* bone, int id) {
 	if (maxBoneId <= id) { maxBoneId = (id + 1); LOG(DEBUG) << "New MAX bone ID is " << (id + 1); }
 	if (minBoneId > id) { minBoneId = id; }
 
-	LOG(INFO) << "StoreBoneById :: MLOC: << " << &mBonesArrOrdered[id] << " Ref ID: " << mBonesArrOrdered[id]->id << " - maxBone ID: " << maxBoneId << " - minBone ID: " << minBoneId;
+	LOG(DEBUG) << "StoreBoneById :: MLOC: << " << &mBonesArrOrdered[id] << " Ref ID: " << mBonesArrOrdered[id]->id << " - maxBone ID: " << maxBoneId << " - minBone ID: " << minBoneId;
 }
 
 Bone Mesh::GetBoneById(int id) {
@@ -506,7 +506,7 @@ void Mesh::draw() {
 	
 	if (mIndices.size() > 0) {
 
-		LOG(INFO) << "     - Drawing " << mNumVertices << " indices.";
+		LOG(DEBUG) << "     - Drawing " << mNumVertices << " indices.";
 		glDrawArrays(GL_TRIANGLES, 0, mNumVertices);
 		//glDrawElements(GL_TRIANGLES, mNumVertices, GL_ELEMENT_ARRAY_BUFFER, 0);
 		

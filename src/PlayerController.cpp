@@ -66,3 +66,11 @@ void PlayerController::SetLook(vec3 targ) {
 	//playerCamera.setCameraTargetVectors(targ);
 	
 }
+
+void PlayerController::SetFlashlight(int lightID) {
+	flashLightID = lightID;
+}
+
+void PlayerController::SetCharacterModel(int modelID) {
+	playerCharacterModelID = modelID;
+}

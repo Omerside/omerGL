@@ -264,8 +264,7 @@ void FirstPersonCamera::ExecuteMove(float yaw, float pitch) {
 	else if (direction == UP) {
 		newPos = (mPosition += moveSpeed * cameraUp);
 		mTargetPos += moveSpeed * cameraUp;
-		
-				
+	
 	}
 
 

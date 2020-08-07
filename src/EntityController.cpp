@@ -12,6 +12,10 @@ EntityController::EntityController() {
 
 }
 
+EntityController::~EntityController() {
+	for_each(entities.begin(), entities.end(), [](AnimatedModel* &n) { delete n; });
+}
+
 EntityController* EntityController::getInstance() {
 	if (inst == NULL) {
 		inst = new EntityController();
@@ -26,29 +30,19 @@ int EntityController::LoadEntity(const char* daeFile, const char* texFile, Entit
 	properties.type = type;
 	properties.position = pos;
 
-	LOG(DEBUG) << "Creating animated model, file name:  " << daeFile;
-	//AnimatedModel animatedModel(shader, daeFile);
 
-	//LOG(DEBUG) << "MLOC FOR RAW ANIMODEL: " << &animatedModel;
 	entities.push_back(new AnimatedModel(shader, daeFile));
-
-	LOG(DEBUG) << "MLOC FOR array ANIMODEL: " << entities.back();
-	LOG(DEBUG) << "Entity created. mloc: " << &(entities.back());
 	properties.entityId = entities.size() - 1;
 
 	if (texFile) {
-		LOG(DEBUG) << "Creating texture: " << texFile;
+
 		Texture2D texture;
 		texture.loadTexture(texFile, true);
 		textures.push_back(texture);
 		properties.textureId = textures.size() - 1;
 	}
 
-	LOG(DEBUG) << "New entity created with following parameters: \nposition: " << properties.position << "id: " << properties.entityId << "\ntex ID: " << properties.textureId;
 	entityProperties.push_back(properties);
-
-	LOG(DEBUG) << "Count of entity and properties: " << entities.size() << " " << entityProperties.size();
-
 	return properties.entityId;
 }
 

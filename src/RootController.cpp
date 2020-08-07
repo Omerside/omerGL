@@ -5,6 +5,7 @@ RootController::RootController() {
 	inputCtrl = inputCtrl->getInstance();
 	playerCtrl = playerCtrl->getInstance();
 	entityCtrl = entityCtrl->getInstance();
+	lightCtrl = lightCtrl->getInstance();
 
 	mp = inputCtrl->GetMouseProperties();
 	
@@ -20,6 +21,7 @@ RootController::~RootController() {
 	delete inputCtrl;
 	delete playerCtrl;
 	delete entityCtrl;
+	delete lightCtrl;
 }
 
 void RootController::CheckMouseInput(double posX, double posY) {
@@ -60,11 +62,19 @@ void RootController::Update() {
 	double currentTime = glfwGetTime();
 	double deltaTime = currentTime - lastTime;
 	
-	LOG(DEBUG) << "Executing Camera move";
+	//Move camera
 	playerCtrl->ExecuteCameraMove(mp->gYaw, mp->gPitch);
 
-	LOG(DEBUG) << "Drawing entity";
+
+	//recalculate light positions/directions and draw lights
+	lightCtrl->DrawLights();
+
+	//Draw Entities
+	shader->SetUniform("material.shininess", 10.0f);
 	entityCtrl->DrawEntities(&deltaTime);
+
+
+
 
 	lastTime = currentTime;
 }
@@ -78,11 +88,13 @@ void RootController::SetGlfWindow(GLFWwindow* gWindowInput) {
 	inputCtrl->SetGlfWindow(gWindow);
 	playerCtrl->SetGlfWindow(gWindow);
 	entityCtrl->SetGlfWindow(gWindow);
+	lightCtrl->SetGlfWindow(gWindow);
 };
 
 void RootController::SetShader(ShaderProgram* shaderInput) {
 	shader = shaderInput;
 	entityCtrl->shader = shader;
+	lightCtrl->shader = shader;
 };
 
 int RootController::LoadEntity(
@@ -103,7 +115,7 @@ int RootController::LoadEntity(
 	entityCtrl->SetEntityScale(entityID, &scale);
 
 	if (activeAnim) {
-		LOG(INFO) << "Found active animation. Setting ID " << entityID << " to have the active animation " << activeAnim;
+		LOG(DEBUG) << "Found active animation. Setting ID " << entityID << " to have the active animation " << activeAnim;
 		entityCtrl->SetActiveAnimation(entityID, activeAnim, &activeAnimLooping);
 	}
 
@@ -112,6 +124,24 @@ int RootController::LoadEntity(
 		entityCtrl->EnableEntityOutline(entityID, &outlineColor, &vec3(1.1, 1.0, 1.1), &outlineColorHidden);
 	}
 
-	LOG(INFO) << "Entity loaded.";
+	LOG(DEBUG) << "Entity loaded.";
 	return entityID;
+}
+
+int RootController::LoadLight(
+	LightTypes type,
+	vec3 ambient,
+	vec3 diffuse,
+	vec3 specular,
+	vec3 pos,
+	vec3 direction,
+	float cosInnerConeIn,
+	float cosOuterConeIn,
+	float constantIn,
+	float linearIn,
+	float exponentIn
+) {
+
+	return lightCtrl->InsertLight(type, ambient, diffuse, specular, pos, direction, cosInnerConeIn, cosOuterConeIn, constantIn, linearIn, exponentIn);
+	
 }

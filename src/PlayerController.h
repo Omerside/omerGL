@@ -30,7 +30,12 @@ private:
 	FirstPersonCamera playerCamera;
 	void InitPlayerCamera();
 
+	int flashLightID = -1;
+	int playerCharacterModelID = -1;
 	
+	//Set a flashlight which follows the camera and points at what the player is targeting
+	void SetFlashlight(int lightID);
+	void SetCharacterModel(int modelID);
 
 public:
 	

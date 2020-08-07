@@ -40,6 +40,12 @@ enum EntityTypes {
 	ENTITY_STATIC
 };
 
+enum LightTypes {
+	LIGHT_POINT,
+	LIGHT_SPOT,
+	LIGHT_DIRECTIONAL
+};
+
 enum LightingActions {
 
 };

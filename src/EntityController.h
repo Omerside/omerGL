@@ -32,6 +32,7 @@ private:
 
 	//EntityController can only be instantiated by RootController.
 	EntityController();
+	~EntityController();
 
 	ShaderProgram* shader;
 	vector<AnimatedModel*> entities; // Location in vector = entity ID

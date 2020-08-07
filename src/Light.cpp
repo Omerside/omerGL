@@ -122,6 +122,14 @@ PointLight::~PointLight() {
 }
 
 void PointLight::draw() { 
+	LOG(INFO) << "PointLight Info: \n" <<
+		"mAmbient: " << mAmbient <<
+		"mDiffuse: " << mDiffuse<<
+		"mSpecular: " << mSpecular <<
+		"mPosition: " << mPosition <<
+		"constant: " << attentuation.constant << "\n" <<
+		"linear: " << attentuation.linear << "\n" <<
+		"exponent: " << attentuation.exponent << "\n\n";
 	shader->SetUniform((mStandardUniformBeginning + ".ambient").c_str(), mAmbient);
 	shader->SetUniform((mStandardUniformBeginning + ".diffuse").c_str(), mDiffuse);
 	shader->SetUniform((mStandardUniformBeginning + ".specular").c_str(), mSpecular);
