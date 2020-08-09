@@ -69,7 +69,7 @@ int main() {
 	rootCtrl->LoadLight(LIGHT_POINT, vec3(10), vec3(20.0f), vec3(10.0f));
 	rootCtrl->LoadLight(LIGHT_SPOT, vec3(10), vec3(20.0f), vec3(10.0f), vec3(-10, 5, -10), vec3(0, -1, 0));
 	rootCtrl->LoadLight(LIGHT_SPOT, vec3(10, 10, 10), vec3(20.0f, 0, 20), vec3(10.0f, 0, 10), vec3(10, 5, 10), vec3(0, -1, 0));
-
+	rootCtrl->LoadLight(LIGHT_PLAYER_FLASHLIGHT, vec3(10, 10, 10), vec3(20.0f, 0, 20), vec3(10.0f, 0, 10), vec3(10, 5, 10), vec3(0, -1, 0));
 
 	shaderProgram.Use();
 
@@ -105,8 +105,7 @@ int main() {
 
 		//REPLACED BY ROOTCONTROLLER
 		view = rootCtrl->TempGetViewMatrix();
-
-		projection = perspective(radians(45.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
+		projection = perspective(radians(55.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
 		shaderProgram.SetGlobalUniforms();
 		
 

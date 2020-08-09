@@ -7,3 +7,7 @@ void WorldObject::setPosition(glm::vec3 loc) {
 glm::vec3 WorldObject::getPosition() {
 	return mPosition;
 }
+
+void WorldObject::setLayer(Layer layer) {
+	objectLayer = layer;
+}

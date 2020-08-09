@@ -8,7 +8,7 @@ static MouseProperties mouseProperties;
 static vec2 lastMousePos;
 
 
-KeyAction CreateKeyAction(ActionType t, DIRECTION paPress, DIRECTION paRelease, SystemActions sa);
+KeyAction CreateKeyAction(ActionType t, DIRECTION pdPress, DIRECTION pdRelease, PlayerActions paPress, PlayerActions paRelease, SystemActions sa);
 
 
 void InputController::OnMouseMove(double posX, double posY) {
@@ -37,9 +37,11 @@ void InputController::OnMouseMove(double posX, double posY) {
 }
 
 
-KeyAction CreateKeyAction(ActionType t, DIRECTION paPress, DIRECTION paRelease, SystemActions sa) {
+KeyAction CreateKeyAction(ActionType t, DIRECTION pdPress, DIRECTION pdRelease, PlayerActions paPress, PlayerActions paRelease, SystemActions sa) {
 	KeyAction ka;
 	ka.type = t;
+	ka.playerDirectionOnPress = pdPress;
+	ka.playerDirectionOnRelease = pdRelease;
 	ka.playerActionOnPress = paPress;
 	ka.playerActionOnRelease = paRelease;
 	ka.SystemAction = sa;
@@ -70,19 +72,19 @@ void InputController::InitKeymapping() {
 
 	//Initialize all keys to performing no action at all.
 	for (int i = 0; i < GLFW_KEY_LAST + 1; i++) {
-		keyMapping[i] = CreateKeyAction(SYSTEM, NONE, NONE, SYSTEM_NONE);
+		keyMapping[i] = CreateKeyAction(SYSTEM, NONE, NONE, PLAYER_NONE, PLAYER_NONE, SYSTEM_NONE);
 	}
 
 	//define some individual keys.
-	keyMapping[GLFW_KEY_ESCAPE] = CreateKeyAction(SYSTEM, NONE, NONE, SYSTEM_CLOSE_WINDOW);
-	keyMapping[GLFW_KEY_W] = CreateKeyAction(PLAYER, FORWARD, NONE, SYSTEM_NONE);
-	keyMapping[GLFW_KEY_S] = CreateKeyAction(PLAYER, BACK, NONE, SYSTEM_NONE);
-	keyMapping[GLFW_KEY_D] = CreateKeyAction(PLAYER, RIGHT, NONE, SYSTEM_NONE);
-	keyMapping[GLFW_KEY_A] = CreateKeyAction(PLAYER, LEFT, NONE, SYSTEM_NONE);
-	keyMapping[GLFW_KEY_SPACE] = CreateKeyAction(PLAYER, UP, NONE, SYSTEM_NONE);
-	keyMapping[GLFW_KEY_C] = CreateKeyAction(PLAYER, DOWN, NONE, SYSTEM_NONE);
-	keyMapping[GLFW_KEY_P] = CreateKeyAction(SYSTEM, NONE, NONE, SYSTEM_POLYGON_MODE);
-
+	keyMapping[GLFW_KEY_ESCAPE] = CreateKeyAction(SYSTEM, NONE, NONE, PLAYER_NONE, PLAYER_NONE, SYSTEM_CLOSE_WINDOW);
+	keyMapping[GLFW_KEY_W] = CreateKeyAction(PLAYER, FORWARD, NONE, PLAYER_MOVE_FORWARD, PLAYER_NONE, SYSTEM_NONE);
+	keyMapping[GLFW_KEY_S] = CreateKeyAction(PLAYER, BACK, NONE, PLAYER_MOVE_BACK, PLAYER_NONE, SYSTEM_NONE);
+	keyMapping[GLFW_KEY_D] = CreateKeyAction(PLAYER, RIGHT, NONE, PLAYER_MOVE_RIGHT, PLAYER_NONE, SYSTEM_NONE);
+	keyMapping[GLFW_KEY_A] = CreateKeyAction(PLAYER, LEFT, NONE, PLAYER_MOVE_LEFT, PLAYER_NONE, SYSTEM_NONE);
+	keyMapping[GLFW_KEY_SPACE] = CreateKeyAction(PLAYER, UP, NONE, PLAYER_MOVE_UP, PLAYER_NONE, SYSTEM_NONE);
+	keyMapping[GLFW_KEY_C] = CreateKeyAction(PLAYER, DOWN, NONE, PLAYER_MOVE_DOWN, PLAYER_NONE, SYSTEM_NONE);
+	keyMapping[GLFW_KEY_P] = CreateKeyAction(SYSTEM, NONE, NONE, PLAYER_NONE, PLAYER_NONE, SYSTEM_POLYGON_MODE);
+	keyMapping[GLFW_KEY_F] = CreateKeyAction(PLAYER, NONE, NONE, PLAYER_SWITCH_FLASHLIGHT, PLAYER_NONE, SYSTEM_NONE);
 }
 
 

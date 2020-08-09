@@ -2,6 +2,7 @@
 #define ROOTCONTROLLER_H
 
 #include <iostream>
+#include <algorithm>
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
 #include "glm/ext.hpp"
@@ -26,7 +27,7 @@ The RootController will take the input and the accompanied instruction.
 If the instruction is to move the player, RootController will send a request to PlayerController to movethe character object.
 
 */
-
+const int MAX_ACTIONS_PER_CYCLE = 20;
 
 class RootController
 {
@@ -49,16 +50,33 @@ private:
 	MouseProperties* mp;
 	bool gWireframe = false;
 	ShaderProgram* shader;
+
 	
+protected:
+	vector<LightAction*> lightActionsQueue;
+	vector<EntityAction*> entityActionsQueue;
+
+	vec3 cameraPos;
+	mat4 viewMat;
 
 public:
 
+	//Set shader
 	void SetShader(ShaderProgram* shaderInput);
 	
+	//Define singleton
 	static RootController* getInstance();
+
+	//Get keyboard/mouse inputs
 	void CheckInputController(int key, int scancode, int action, int mode);
 	void CheckMouseInput(double posX, double posY);
 
+	//Process light and entity actions by iterating over their respective queue vectors and
+	//passing the desired actions to their controllers. Queues are cleared once done.
+	void processLightActions();
+	void processEntityActions();
+
+	//Get camera properties to be passed down.
 	void SetCameraLookAt(vec3 targ);
 	vec3 TempGetCameraPosition() { return playerCtrl->getPlayerCameraPosition(); };
 	mat4 TempGetViewMatrix() { return playerCtrl->getViewMatrix(); };

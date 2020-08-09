@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <map>
+#include <vector>
 #include "Log.h"
 #include "ControllerDefinitions.h"
 #include "Camera.h"
@@ -30,6 +31,8 @@ private:
 	FirstPersonCamera playerCamera;
 	void InitPlayerCamera();
 
+	bool SwitchFlashlight();
+	bool isFlashlightOn = false;
 	int flashLightID = -1;
 	int playerCharacterModelID = -1;
 	
@@ -37,8 +40,15 @@ private:
 	void SetFlashlight(int lightID);
 	void SetCharacterModel(int modelID);
 
-public:
+	//Check for actions taken by player
+	void CalcLightAction(KeyAction d, int action, vector<LightAction*> &actionQueue);
+	//EntityAction** CalcEntityAction(KeyAction d, int action);
+
+	void MoveDirection(DIRECTION d);
 	
+
+public:
+
 	MouseProperties CalcNewMouseProperties(MouseProperties in);
 	vec3 getPlayerCameraPosition() {return playerCamera.getPosition();};
 	mat4 getViewMatrix() { return playerCamera.getViewMatrix(); };
@@ -46,7 +56,7 @@ public:
 	void SetGlfWindow(GLFWwindow* gWindowInput) { gWindow = gWindowInput; };
 	void ExecuteCameraMove(float yaw, float pitch);
 
-	void MoveDirection(DIRECTION d);
+	
 	void MoveDirection(KeyAction d, int action);
 	void SetLook(vec3 targ);
 

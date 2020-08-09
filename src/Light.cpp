@@ -122,7 +122,7 @@ PointLight::~PointLight() {
 }
 
 void PointLight::draw() { 
-	LOG(INFO) << "PointLight Info: \n" <<
+	LOG(DEBUG) << "PointLight Info: \n" <<
 		"mAmbient: " << mAmbient <<
 		"mDiffuse: " << mDiffuse<<
 		"mSpecular: " << mSpecular <<

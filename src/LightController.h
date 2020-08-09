@@ -35,10 +35,15 @@ private:
 	LightController();
 	~LightController();
 
+	//view matrix and camera position:
+	vec3* cameraPos;
+	mat4* viewMat;
+
 	//Stacks of light
 	vector<PointLight*> pointLights;
 	vector<SpotLight*> spotLights;
 	vector<DirectionalLight*> directionalLights;
+
 
 	/* lightIDMap
 	Stack of pairs connecting a light ID unique across all 3 light types with an ID
@@ -48,6 +53,8 @@ private:
 	to refer to the specific object.
 	*/
 	vector<pair<LightTypes, int>> lightIDMap;
+	//vector<pair<LightTypes, int>> dynamicLightIDMap;
+
 
 
 	//create a light object, returns light ID
@@ -65,12 +72,25 @@ private:
 		float exponentIn = 0.017f
 		);
 
+
+
 	//Control light position, direction
 	bool SetPosition(int lightID, vec3 pos);
 	bool SetDirection(int lightID, vec3 direction);
 
 	//Draw lights currently stored in LightController
 	void DrawLights();
+
+	//Delete light object
+	void DeleteLight(int id);
+
+	//Change the visibilty layer of a light object
+	void UpdateLightLayer(Layer layer, int lightID);
+
+	//Process an action passed by the root controller.
+	void ProcessAction(LightAction actionObj);
+
+
 	
 public:
 	

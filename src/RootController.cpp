@@ -2,6 +2,9 @@
 RootController* RootController::inst = NULL;
 
 RootController::RootController() {
+	lightActionsQueue.reserve(MAX_NUM_ENTITIES);
+	entityActionsQueue.reserve(MAX_ACTIONS_PER_CYCLE);
+
 	inputCtrl = inputCtrl->getInstance();
 	playerCtrl = playerCtrl->getInstance();
 	entityCtrl = entityCtrl->getInstance();
@@ -41,6 +44,9 @@ RootController* RootController::getInstance() {
 void RootController::CheckInputController(int key, int scancode, int action, int mode) {
 	KeyAction ka = inputCtrl->OnKey(key, scancode, action, mode);
 	playerCtrl->MoveDirection(ka, action);
+
+	playerCtrl->CalcLightAction(ka, action, lightActionsQueue);
+	//entityActionsQueue.push_back(playerCtrl->CalcEntityAction(ka, action));
 	SystemDirection(ka, action);
 
 }
@@ -61,12 +67,16 @@ void RootController::SystemDirection(KeyAction ka, int action) {
 void RootController::Update() {
 	double currentTime = glfwGetTime();
 	double deltaTime = currentTime - lastTime;
-	
+
+	cameraPos = playerCtrl->getPlayerCameraPosition();
+	viewMat = playerCtrl->getViewMatrix();
+
 	//Move camera
 	playerCtrl->ExecuteCameraMove(mp->gYaw, mp->gPitch);
 
 
-	//recalculate light positions/directions and draw lights
+	//Draw world lights
+	processLightActions();
 	lightCtrl->DrawLights();
 
 	//Draw Entities
@@ -142,6 +152,33 @@ int RootController::LoadLight(
 	float exponentIn
 ) {
 
-	return lightCtrl->InsertLight(type, ambient, diffuse, specular, pos, direction, cosInnerConeIn, cosOuterConeIn, constantIn, linearIn, exponentIn);
-	
+	if (type == LIGHT_PLAYER_FLASHLIGHT) {
+		
+		int lightID = lightCtrl->InsertLight(type, ambient, diffuse, specular, pos, direction, cosInnerConeIn, cosOuterConeIn, constantIn, linearIn, exponentIn);
+		if (playerCtrl->flashLightID != -1) {
+			lightCtrl->DeleteLight(playerCtrl->flashLightID);
+		}
+			
+		playerCtrl->flashLightID = lightID;
+		return lightID;
+	}
+	else {
+		return lightCtrl->InsertLight(type, ambient, diffuse, specular, pos, direction, cosInnerConeIn, cosOuterConeIn, constantIn, linearIn, exponentIn);
+	}
+}
+
+void RootController::processLightActions() {
+//	LOG(DEBUG) << "About to process light actions...";
+	for_each(lightActionsQueue.begin(), lightActionsQueue.end(), [&](LightAction* &q) {
+		lightCtrl->ProcessAction(*q);
+		delete q;
+	});
+
+	lightActionsQueue.clear();
+
+	//LOG(INFO) << "PROCESSED ALL light actions. capacity:  " << lightActionsQueue.capacity();
+}
+
+void RootController::processEntityActions() {
+
 }
