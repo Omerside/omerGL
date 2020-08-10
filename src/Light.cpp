@@ -93,10 +93,16 @@ vec3 DirectionalLight::getDirection() {
 }
 
 void DirectionalLight::draw() {
-	shader->SetUniform("dirLight.ambient", mAmbient);
-	shader->SetUniform("dirLight.diffuse", mDiffuse);
-	shader->SetUniform("dirLight.specular", mSpecular);
-	shader->SetUniform("dirLight.direction", mDirection);
+	if (objectLayer != INVISIBLE){
+		shader->SetUniform("dirLight.ambient", mAmbient);
+		shader->SetUniform("dirLight.diffuse", mDiffuse);
+		shader->SetUniform("dirLight.specular", mSpecular);
+		shader->SetUniform("dirLight.direction", mDirection);
+	} else {
+		shader->SetUniform((mStandardUniformBeginning + ".ambient").c_str(), vec3(0));
+		shader->SetUniform((mStandardUniformBeginning + ".direction").c_str(), vec3(0));
+		shader->SetUniform((mStandardUniformBeginning + ".diffuse").c_str(), vec3(0));
+	}
 }
 
 
@@ -130,13 +136,20 @@ void PointLight::draw() {
 		"constant: " << attentuation.constant << "\n" <<
 		"linear: " << attentuation.linear << "\n" <<
 		"exponent: " << attentuation.exponent << "\n\n";
-	shader->SetUniform((mStandardUniformBeginning + ".ambient").c_str(), mAmbient);
-	shader->SetUniform((mStandardUniformBeginning + ".diffuse").c_str(), mDiffuse);
-	shader->SetUniform((mStandardUniformBeginning + ".specular").c_str(), mSpecular);
-	shader->SetUniform((mStandardUniformBeginning + ".position").c_str(), mPosition);
-	shader->SetUniform((mStandardUniformBeginning + ".constant").c_str(), attentuation.constant);
-	shader->SetUniform((mStandardUniformBeginning + ".linear").c_str(), attentuation.linear);
-	shader->SetUniform((mStandardUniformBeginning + ".exponent").c_str(), attentuation.exponent);
+
+	if (objectLayer != INVISIBLE) {
+		shader->SetUniform((mStandardUniformBeginning + ".ambient").c_str(), mAmbient);
+		shader->SetUniform((mStandardUniformBeginning + ".diffuse").c_str(), mDiffuse);
+		shader->SetUniform((mStandardUniformBeginning + ".specular").c_str(), mSpecular);
+		shader->SetUniform((mStandardUniformBeginning + ".position").c_str(), mPosition);
+		shader->SetUniform((mStandardUniformBeginning + ".constant").c_str(), attentuation.constant);
+		shader->SetUniform((mStandardUniformBeginning + ".linear").c_str(), attentuation.linear);
+		shader->SetUniform((mStandardUniformBeginning + ".exponent").c_str(), attentuation.exponent);
+	} else {
+		shader->SetUniform((mStandardUniformBeginning + ".ambient").c_str(), vec3(0));
+		shader->SetUniform((mStandardUniformBeginning + ".direction").c_str(), vec3(0));
+		shader->SetUniform((mStandardUniformBeginning + ".diffuse").c_str(), vec3(0));
+	}
 }
 
 
@@ -173,15 +186,20 @@ vec3 SpotLight::getDirection() {
 }
 
 void SpotLight::draw() {
-
-	shader->SetUniform((mStandardUniformBeginning + ".ambient").c_str(), mAmbient);
-	shader->SetUniform((mStandardUniformBeginning + ".direction").c_str(), mDirection);
-	shader->SetUniform((mStandardUniformBeginning + ".diffuse").c_str(), mDiffuse);
-	shader->SetUniform((mStandardUniformBeginning + ".specular").c_str(), mSpecular);
-	shader->SetUniform((mStandardUniformBeginning + ".position").c_str(), mPosition);
-	shader->SetUniform((mStandardUniformBeginning + ".constant").c_str(), attentuation.constant);
-	shader->SetUniform((mStandardUniformBeginning + ".linear").c_str(), attentuation.linear);
-	shader->SetUniform((mStandardUniformBeginning + ".exponent").c_str(), attentuation.exponent);
-	shader->SetUniform((mStandardUniformBeginning + ".cosInnerCone").c_str(), fRadius.cosInnerCone);
-	shader->SetUniform((mStandardUniformBeginning + ".cosOuterCone").c_str(), fRadius.cosOuterCone);
+	if (objectLayer != INVISIBLE) {
+		shader->SetUniform((mStandardUniformBeginning + ".ambient").c_str(), mAmbient);
+		shader->SetUniform((mStandardUniformBeginning + ".direction").c_str(), mDirection);
+		shader->SetUniform((mStandardUniformBeginning + ".diffuse").c_str(), mDiffuse);
+		shader->SetUniform((mStandardUniformBeginning + ".specular").c_str(), mSpecular);
+		shader->SetUniform((mStandardUniformBeginning + ".position").c_str(), mPosition);
+		shader->SetUniform((mStandardUniformBeginning + ".constant").c_str(), attentuation.constant);
+		shader->SetUniform((mStandardUniformBeginning + ".linear").c_str(), attentuation.linear);
+		shader->SetUniform((mStandardUniformBeginning + ".exponent").c_str(), attentuation.exponent);
+		shader->SetUniform((mStandardUniformBeginning + ".cosInnerCone").c_str(), fRadius.cosInnerCone);
+		shader->SetUniform((mStandardUniformBeginning + ".cosOuterCone").c_str(), fRadius.cosOuterCone);
+	} else {
+		shader->SetUniform((mStandardUniformBeginning + ".ambient").c_str(), vec3(0));
+		shader->SetUniform((mStandardUniformBeginning + ".direction").c_str(), vec3(0));
+		shader->SetUniform((mStandardUniformBeginning + ".diffuse").c_str(), vec3(0));
+	}
 }

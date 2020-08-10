@@ -11,6 +11,10 @@ RootController::RootController() {
 	lightCtrl = lightCtrl->getInstance();
 
 	mp = inputCtrl->GetMouseProperties();
+	mouseMoved.playerActionOnPress = PLAYER_MOVE_MOUSE;
+	mouseMoved.playerDirectionOnPress = NONE;
+	mouseMoved.SystemAction = SYSTEM_NONE;
+	mouseMoved.type = PLAYER;
 	
 	/*
 	MouseProperties newMp = (playerCtrl->CalcNewMouseProperties(*mp));
@@ -18,6 +22,12 @@ RootController::RootController() {
 	mp->gYaw = newMp.gYaw;
 	*/
 	lastTime = glfwGetTime();
+
+	playerCtrl->cameraPos = &cameraPos;
+	playerCtrl->viewMat = &viewMat;
+	playerCtrl->lookAt = &lookAt;
+
+	
 }
 
 RootController::~RootController() {
@@ -25,10 +35,6 @@ RootController::~RootController() {
 	delete playerCtrl;
 	delete entityCtrl;
 	delete lightCtrl;
-}
-
-void RootController::CheckMouseInput(double posX, double posY) {
-	inputCtrl->OnMouseMove(posX, posY);
 }
 
 
@@ -40,13 +46,20 @@ RootController* RootController::getInstance() {
 	return(inst);
 }
 
+void RootController::CheckMouseInput(double posX, double posY) {
+	inputCtrl->OnMouseMove(posX, posY);
+
+	playerCtrl->CalcLightAction(mouseMoved, GLFW_PRESS, lightActionsQueue);
+
+	//lightActionsQueue.push_back(new LightAction(PLAYER_MOVE_MOUSE, -1, 0.0f, vec3(0)));
+	//playerCtrl->CalcLightAction(ka, PLAYER_MOVE_MOUSE, lightActionsQueue);
+}
 
 void RootController::CheckInputController(int key, int scancode, int action, int mode) {
 	KeyAction ka = inputCtrl->OnKey(key, scancode, action, mode);
 	playerCtrl->MoveDirection(ka, action);
 
 	playerCtrl->CalcLightAction(ka, action, lightActionsQueue);
-	//entityActionsQueue.push_back(playerCtrl->CalcEntityAction(ka, action));
 	SystemDirection(ka, action);
 
 }
@@ -69,7 +82,10 @@ void RootController::Update() {
 	double deltaTime = currentTime - lastTime;
 
 	cameraPos = playerCtrl->getPlayerCameraPosition();
+	lookAt = playerCtrl->getLook();
 	viewMat = playerCtrl->getViewMatrix();
+
+	//playerCtrl->CalcLightExistingLight(lightActionsQueue);
 
 	//Move camera
 	playerCtrl->ExecuteCameraMove(mp->gYaw, mp->gPitch);
@@ -168,7 +184,9 @@ int RootController::LoadLight(
 }
 
 void RootController::processLightActions() {
-//	LOG(DEBUG) << "About to process light actions...";
+	playerCtrl->GetLightPersistentAction(lightActionsQueue);
+
+	LOG(DEBUG) << "About to process light actions...";
 	for_each(lightActionsQueue.begin(), lightActionsQueue.end(), [&](LightAction* &q) {
 		lightCtrl->ProcessAction(*q);
 		delete q;
@@ -176,7 +194,7 @@ void RootController::processLightActions() {
 
 	lightActionsQueue.clear();
 
-	//LOG(INFO) << "PROCESSED ALL light actions. capacity:  " << lightActionsQueue.capacity();
+	LOG(DEBUG) << "PROCESSED ALL light actions. capacity:  " << lightActionsQueue.capacity();
 }
 
 void RootController::processEntityActions() {

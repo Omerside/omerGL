@@ -28,6 +28,7 @@ enum PlayerActions {
 	PLAYER_MOVE_FORWARD,
 	PLAYER_MOVE_BACK,
 	PLAYER_MOVE_STOP,
+	PLAYER_MOVE_MOUSE,
 	PLAYER_SWITCH_FLASHLIGHT,
 	PLAYER_NONE
 };
@@ -109,22 +110,42 @@ struct KeyAction {
 	PlayerActions playerActionOnPress;
 	PlayerActions playerActionOnRelease;
 	SystemActions SystemAction;
+	KeyAction() {};
+	KeyAction(ActionType t, PlayerActions paop, PlayerActions paor, SystemActions sa) :
+		type(t),
+		playerActionOnPress(paop),
+		playerActionOnRelease(paor),
+		SystemAction(sa){}
 };
 
 //LightAction is passed to the LightController. The type of action dictates which
-//of the variables will be necessary.
+//of the variables will be necessary. This action will happen once and then self-delete.
 struct LightAction {
 	LightActions action;
-	int id;
+	const int id;
 	float f;
 	glm::vec3 v;
-	LightAction(LightActions actionIn, int idIn, float fIn = 0.0f, glm::vec3 vIn = glm::vec3(0)) {
+	LightAction(LightActions actionIn, int idIn, float fIn = 0.0f, glm::vec3 vIn = glm::vec3(0)) : id(idIn) {
 		action = actionIn;
-		id = idIn;
 		f = fIn;
 		v = vIn;
 	}
 };
+
+//LightAction is passed to the LightController. The type of action dictates which
+//of the variables will be necessary. This action will happen until explicitly deleted.
+struct LightActionDynamic {
+	const LightActions action;
+	const int id;
+	const float* f;
+	const glm::vec3* v;
+	LightActionDynamic(LightActions actionIn, int idIn, float* fIn = nullptr, glm::vec3* vIn = nullptr) :
+		id(idIn),
+		action(actionIn),
+		f(fIn),
+		v(vIn) {};
+};
+
 
 struct EntityAction {
 	EntityActions action;

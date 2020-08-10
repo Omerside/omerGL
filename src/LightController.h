@@ -89,7 +89,7 @@ private:
 
 	//Process an action passed by the root controller.
 	void ProcessAction(LightAction actionObj);
-
+	void ProcessAction(LightActionDynamic actionObj);
 
 	
 public:

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <algorithm>
 #include "Log.h"
 #include "ControllerDefinitions.h"
 #include "Camera.h"
@@ -35,13 +36,22 @@ private:
 	bool isFlashlightOn = false;
 	int flashLightID = -1;
 	int playerCharacterModelID = -1;
+
+	vec3* cameraPos;
+	vec3* lookAt;
+	mat4* viewMat;
 	
 	//Set a flashlight which follows the camera and points at what the player is targeting
 	void SetFlashlight(int lightID);
 	void SetCharacterModel(int modelID);
 
-	//Check for actions taken by player
+	//Check for actions taken by player from outside factors
 	void CalcLightAction(KeyAction d, int action, vector<LightAction*> &actionQueue);
+
+	//Append the list of persistent actions to the main action queue for the light controller
+	void GetLightPersistentAction(vector<LightAction*> &actionQueue);
+	vector<LightActionDynamic*> dynamicLightActionsQueue;
+
 	//EntityAction** CalcEntityAction(KeyAction d, int action);
 
 	void MoveDirection(DIRECTION d);

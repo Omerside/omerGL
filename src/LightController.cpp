@@ -72,6 +72,38 @@ void LightController::ProcessAction(LightAction actionObj) {
 
 }
 
+void LightController::ProcessAction(LightActionDynamic actionObj) {
+	if (actionObj.id == -1) {
+		LOG(ERR) << "LightController::ProcessAction - unassigned light ID.";
+		return;
+	}
+	switch (actionObj.action) {
+	case LIGHT_UPDATE_POS:
+		if (actionObj.v != nullptr) {
+			SetPosition(actionObj.id, *actionObj.v);
+		}
+		else {
+			LOG(ERR) << "LightController::ProcessAction - update position requested but position value is null.";
+		}
+		break;
+
+	case LIGHT_UPDATE_DIR:
+		if (actionObj.v != nullptr) {
+			SetDirection(actionObj.id, *actionObj.v);
+		}
+		else {
+			LOG(ERR) << "LightController::ProcessAction - update direction requested but position value is null.";
+		}
+		
+		break;
+
+
+	default:
+		LOG(ERR) << "LightController::ProcessAction - Unsupported command.";
+	}
+
+}
+
 
 void LightController::UpdateLightLayer(Layer layer, int lightID) {
 
@@ -175,7 +207,7 @@ bool LightController::SetPosition(int lightID, vec3 pos) {
 
 //Set a light object's direction of projection
 bool LightController::SetDirection(int lightID, vec3 direction) {
-	LOG(INFO) << "LightController::SetDirection - Setting direction of light ID " << lightID;
+	LOG(DEBUG) << "LightController::SetDirection - Setting direction of light ID " << lightID;
 	switch (lightIDMap[lightID].first) {
 
 	case LIGHT_PLAYER_FLASHLIGHT:

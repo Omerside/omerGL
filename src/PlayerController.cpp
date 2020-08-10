@@ -60,7 +60,10 @@ void PlayerController::MoveDirection(KeyAction d, int action) {
 }
 
 void PlayerController::CalcLightAction(KeyAction d, int action, vector<LightAction*> &actionQueue) {
-	
+	if (isFlashlightOn) {
+		actionQueue.push_back(new LightAction(LIGHT_UPDATE_DIR, flashLightID, 0.0f, *lookAt));
+	}
+
 	if (action == GLFW_PRESS) {
 		switch (d.playerActionOnPress) {
 
@@ -69,10 +72,13 @@ void PlayerController::CalcLightAction(KeyAction d, int action, vector<LightActi
 
 			if (SwitchFlashlight()){
 				actionQueue.push_back(new LightAction(LIGHT_SET_LAYER_VISIBLE, flashLightID));
+				actionQueue.push_back(new LightAction(LIGHT_UPDATE_POS, flashLightID, 0.0f, *cameraPos));
+				actionQueue.push_back(new LightAction(LIGHT_UPDATE_DIR, flashLightID, 0.0f, *lookAt));
+
 
 			}
 			else {
-				actionQueue.push_back(new LightAction(LIGHT_SET_LAYER_HIDDEN, flashLightID));
+				actionQueue.push_back(new LightAction(LIGHT_SET_LAYER_INVISIBLE, flashLightID));
 			}
 
 			break;
@@ -87,12 +93,23 @@ void PlayerController::CalcLightAction(KeyAction d, int action, vector<LightActi
 			if (isFlashlightOn) {
 	
 
-				actionQueue.push_back(new LightAction(LIGHT_UPDATE_POS, flashLightID, 0.0f, getPlayerCameraPosition()));
-				actionQueue.push_back(new LightAction(LIGHT_UPDATE_DIR, flashLightID, 0.0f, getLook()));
+				actionQueue.push_back(new LightAction(LIGHT_UPDATE_POS, flashLightID, 0.0f, *cameraPos));
+				//actionQueue.push_back(new LightAction(LIGHT_UPDATE_DIR, flashLightID, 0.0f, *lookAt));
+
+				dynamicLightActionsQueue.push_back(new LightActionDynamic(LIGHT_UPDATE_POS, flashLightID, nullptr, cameraPos));
+				//dynamicLightActionsQueue.push_back(new LightActionDynamic(LIGHT_UPDATE_DIR, flashLightID, nullptr, lookAt));
 			}
 
 			break;
 
+		case PLAYER_MOVE_MOUSE:
+			//if (isFlashlightOn) {
+				//actionQueue.push_back(new LightAction(LIGHT_UPDATE_DIR, flashLightID, 0.0f, *lookAt));
+			//}
+		case PLAYER_MOVE_STOP:
+			LOG(DEBUG) << "REMOVING persistent movement actions";
+		case PLAYER_NONE:
+			break;
 		default:
 			LOG(ERR) << "PlayerController::CalcLightAction - Invalid action type.";
 		}
@@ -111,11 +128,54 @@ void PlayerController::CalcLightAction(KeyAction d, int action, vector<LightActi
 			}
 
 			break;
-
+		case PLAYER_MOVE_STOP:
+			for (int i = 0; i < dynamicLightActionsQueue.size(); i++) {
+				switch (d.playerActionOnPress) {
+				case PLAYER_MOVE_LEFT:
+				case PLAYER_MOVE_RIGHT:
+				case PLAYER_MOVE_UP:
+				case PLAYER_MOVE_DOWN:
+				case PLAYER_MOVE_FORWARD:
+				case PLAYER_MOVE_BACK:
+					LOG(DEBUG) << "PlayerController::CalcLightAction - Attempting to remove dynamic action...";
+					dynamicLightActionsQueue.erase(dynamicLightActionsQueue.begin()+i);
+					LOG(DEBUG) << "PlayerController::CalcLightAction - Action removed.";
+							case PLAYER_NONE:
+			break;
+				default:
+					LOG(ERR) << "PlayerController::CalcLightAction - Invalid action type.";
+				}
+			}
+			
+		case PLAYER_NONE:
+			break;
 		default:
 			LOG(ERR) << "PlayerController::CalcLightAction - Invalid action type.";
 		}
 	}
+}
+
+void PlayerController::GetLightPersistentAction(vector<LightAction*> &actionQueue) {
+	LOG(DEBUG) << "PlayerController::GetLightPersistentAction - Attempting to merge persistent and single-cycle queue values... dynamic queue size: " << dynamicLightActionsQueue.size();
+
+	for (int i = 0; i < dynamicLightActionsQueue.size(); i++) {
+		if (dynamicLightActionsQueue[i]->v == nullptr && dynamicLightActionsQueue[i]->f == nullptr) {
+			actionQueue.push_back(new LightAction(dynamicLightActionsQueue[i]->action, dynamicLightActionsQueue[i]->id));// , dynamicLightActionsQueue[i]->f, dynamicLightActionsQueue[i]->v));
+
+		} else if (dynamicLightActionsQueue[i]->v == nullptr || dynamicLightActionsQueue[i]->f == nullptr) {
+			if (dynamicLightActionsQueue[i]->v == nullptr) {
+				actionQueue.push_back(new LightAction(dynamicLightActionsQueue[i]->action, dynamicLightActionsQueue[i]->id, *dynamicLightActionsQueue[i]->f));
+			}
+			else {
+				actionQueue.push_back(new LightAction(dynamicLightActionsQueue[i]->action, dynamicLightActionsQueue[i]->id, 0, *dynamicLightActionsQueue[i]->v));
+			}
+		}
+		else {
+			actionQueue.push_back(new LightAction(dynamicLightActionsQueue[i]->action, dynamicLightActionsQueue[i]->id, *dynamicLightActionsQueue[i]->f, *dynamicLightActionsQueue[i]->v));
+		}
+		
+	}
+	LOG(DEBUG) << "PlayerController::GetLightPersistentAction - PROCESSED all persistent actions.";
 }
 
 /*

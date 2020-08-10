@@ -50,13 +50,17 @@ private:
 	MouseProperties* mp;
 	bool gWireframe = false;
 	ShaderProgram* shader;
+	KeyAction mouseMoved;
 
 	
 protected:
 	vector<LightAction*> lightActionsQueue;
+	vector<LightActionDynamic*> dynamicLightActionsQueue;
+
 	vector<EntityAction*> entityActionsQueue;
 
 	vec3 cameraPos;
+	vec3 lookAt;
 	mat4 viewMat;
 
 public:
@@ -74,6 +78,7 @@ public:
 	//Process light and entity actions by iterating over their respective queue vectors and
 	//passing the desired actions to their controllers. Queues are cleared once done.
 	void processLightActions();
+	void processPersistentLightActions();
 	void processEntityActions();
 
 	//Get camera properties to be passed down.
