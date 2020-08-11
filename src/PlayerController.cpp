@@ -4,7 +4,8 @@
 PlayerController* PlayerController::inst = NULL;
 
 PlayerController::PlayerController() {
-	InitPlayerCamera();
+	//InitPlayerCamera();
+	InitOrbitCamera();
 }
 
 PlayerController* PlayerController::getInstance() {
@@ -16,16 +17,40 @@ PlayerController* PlayerController::getInstance() {
 }
 
 void PlayerController::InitPlayerCamera(){
-	vec3 temp = vec3(0, -0.8, -0.5);
+	activeCameraType = FIRST_PERSON;
 	//TODO: Make a dynamic method for initializing position.
-	playerCamera.setMoveSpeed(0.25f);
-	playerCamera.setCameraPositionVectors(vec3(0.35f, 4.6f, 10.0f));
-	SetLook(vec3(0.1));
-	//ExecuteCameraMove(0.01, 0.01);
-	
+	if (orbitCamera != nullptr) {
+		delete orbitCamera;
+	}
 
-	//playerCamera
-	//playerCamera.ExecuteMove(pitch, yaw);
+	if (playerCamera == nullptr){
+		playerCamera = new FirstPersonCamera();
+	}
+
+	playerCamera->setMoveSpeed(0.25f);
+	playerCamera->setCameraPositionVectors(vec3(0.35f, 4.6f, 10.0f));
+	SetLook(vec3(0.1));
+
+	LOG(DEBUG) << "PlayerController::InitPlayerCamera - DONE INITIALIZING FirstPersonCamera";
+}
+
+void PlayerController::InitOrbitCamera() {
+	activeCameraType = ORBIT;
+	//TODO: Make a dynamic method for initializing position.
+	if (orbitCamera == nullptr) {
+		orbitCamera = new OrbitCamera();
+	}
+
+	if (playerCamera != nullptr) {
+		delete playerCamera;
+	}
+
+	orbitCamera->setMoveSpeed(0.25f);
+	orbitCamera->setRadius(10.0f);
+	SetLook(vec3(0.1));
+	//orbitCamera->setCameraPositionVectors(vec3(0.35f, 4.6f, 10.0f));
+	
+	LOG(DEBUG) << "PlayerController::InitOrbitCamera - DONE INITIALIZING OrbitCamera";
 
 	
 }
@@ -38,18 +63,49 @@ MouseProperties PlayerController::CalcNewMouseProperties(MouseProperties in) {
 }
 
 void PlayerController::ExecuteCameraMove(float yaw, float pitch) {
+	LOG(DEBUG) << "PlayerController::ExecuteCameraMove - Beginning camera move. Type: " << activeCameraType;
+	switch (activeCameraType) {
 
-	playerCamera.ExecuteMove(yaw, pitch);
-	//LOG(DEBUG) << "Yaw and pitch: " << playerCamera.getYawPitch().x << ", " << playerCamera.getYawPitch().y;
+	case FIRST_PERSON:
+		//playerCamera->ExecuteMove(yaw, pitch);
+		playerCamera->rotateOnCamera(yaw, pitch);
+		break;
+		
+	case ORBIT:
+		//playerCamera->rotateOnObject(yaw, pitch);
+		orbitCamera->rotateOnObject(yaw, pitch);
+		break;
 
+	default:
+		LOG(ERR) << "PlayerController::ExecuteCameraMove - Invalid CAMERA type.";
+	}
+	LOG(DEBUG) << "PlayerController::ExecuteCameraMove - Finished camera move.";
 }
 
 void PlayerController::MoveDirection(DIRECTION d) {
 	//LOG(DEBUG) << "attempting to move player in direction " << d;
-	playerCamera.move(d);
+	//playerCamera->move(d);
+	LOG(DEBUG) << "PlayerController::MoveDirection - Beginning move direction. Type: " << d;
+
+
+	switch (activeCameraType) {
+
+	case FIRST_PERSON:
+		playerCamera->move(d);
+		break;
+
+	case ORBIT:
+		break;
+		//orbitCamera->move(d);
+	default:
+		LOG(ERR) << "PlayerController::MoveDirection - Invalid CAMERA type.";
+	}
+
+	LOG(DEBUG) << "PlayerController::MoveDirection - Done move direction.";
 }
 
 void PlayerController::MoveDirection(KeyAction d, int action) {
+	LOG(DEBUG) << "5";
 
 	if (action == GLFW_PRESS) {
 		MoveDirection(d.playerDirectionOnPress);
@@ -68,7 +124,7 @@ void PlayerController::CalcLightAction(KeyAction d, int action, vector<LightActi
 		switch (d.playerActionOnPress) {
 
 		case PLAYER_SWITCH_FLASHLIGHT:
-			LOG(INFO) << "Request to switch flashlight has been given.";
+			LOG(DEBUG) << "Request to switch flashlight has been given.";
 
 			if (SwitchFlashlight()){
 				actionQueue.push_back(new LightAction(LIGHT_SET_LAYER_VISIBLE, flashLightID));
@@ -89,27 +145,23 @@ void PlayerController::CalcLightAction(KeyAction d, int action, vector<LightActi
 		case PLAYER_MOVE_DOWN:
 		case PLAYER_MOVE_FORWARD:
 		case PLAYER_MOVE_BACK:
-			LOG(INFO) << "Updating light pos and dir";
+			LOG(DEBUG) << "Updating light pos and dir";
 			if (isFlashlightOn) {
-	
-
 				actionQueue.push_back(new LightAction(LIGHT_UPDATE_POS, flashLightID, 0.0f, *cameraPos));
-				//actionQueue.push_back(new LightAction(LIGHT_UPDATE_DIR, flashLightID, 0.0f, *lookAt));
-
 				dynamicLightActionsQueue.push_back(new LightActionDynamic(LIGHT_UPDATE_POS, flashLightID, nullptr, cameraPos));
-				//dynamicLightActionsQueue.push_back(new LightActionDynamic(LIGHT_UPDATE_DIR, flashLightID, nullptr, lookAt));
 			}
 
 			break;
 
 		case PLAYER_MOVE_MOUSE:
-			//if (isFlashlightOn) {
-				//actionQueue.push_back(new LightAction(LIGHT_UPDATE_DIR, flashLightID, 0.0f, *lookAt));
-			//}
+			break;
+
 		case PLAYER_MOVE_STOP:
-			LOG(DEBUG) << "REMOVING persistent movement actions";
+			break;
+
 		case PLAYER_NONE:
 			break;
+
 		default:
 			LOG(ERR) << "PlayerController::CalcLightAction - Invalid action type.";
 		}
@@ -140,8 +192,8 @@ void PlayerController::CalcLightAction(KeyAction d, int action, vector<LightActi
 					LOG(DEBUG) << "PlayerController::CalcLightAction - Attempting to remove dynamic action...";
 					dynamicLightActionsQueue.erase(dynamicLightActionsQueue.begin()+i);
 					LOG(DEBUG) << "PlayerController::CalcLightAction - Action removed.";
-							case PLAYER_NONE:
-			break;
+				case PLAYER_NONE:
+					break;
 				default:
 					LOG(ERR) << "PlayerController::CalcLightAction - Invalid action type.";
 				}
@@ -153,6 +205,7 @@ void PlayerController::CalcLightAction(KeyAction d, int action, vector<LightActi
 			LOG(ERR) << "PlayerController::CalcLightAction - Invalid action type.";
 		}
 	}
+	LOG(DEBUG) << "6";
 }
 
 void PlayerController::GetLightPersistentAction(vector<LightAction*> &actionQueue) {
@@ -190,7 +243,7 @@ EntityAction** PlayerController::CalcEntityAction(KeyAction d, int action) {
 		case PLAYER_MOVE_DOWN:
 		case PLAYER_MOVE_FORWARD:
 		case PLAYER_MOVE_BACK:
-			LOG(INFO) << "Move entity requested.";
+			LOG(DEBUG) << "Move entity requested.";
 			actions[0] = new EntityAction(ENTITY_UPDATE_POS, playerCharacterModelID);
 			actions[0] = new EntityAction(ENTITY_UPDATE_DIR, playerCharacterModelID);
 
@@ -223,9 +276,19 @@ EntityAction** PlayerController::CalcEntityAction(KeyAction d, int action) {
 
 void PlayerController::SetLook(vec3 targ) {
 	
-	playerCamera.setLookAt(targ);
-	//playerCamera.setCameraTargetVectors(targ);
-	
+	switch (activeCameraType) {
+
+	case FIRST_PERSON:
+		playerCamera->setLookAt(targ);
+		break;
+
+	case ORBIT:
+		orbitCamera->setLookAt(targ);
+		break;
+
+	default:
+		LOG(ERR) << "PlayerController::SetLook - Invalid CAMERA type.";
+	}
 }
 
 void PlayerController::SetFlashlight(int lightID) {
@@ -245,4 +308,58 @@ bool PlayerController::SwitchFlashlight() {
 		LOG(ERR) << "PlayerController::SwitchFlashlight - Cannot enable flashlight; flashlight undefined.";
 		return isFlashlightOn;
 	}
+}
+
+vec3 PlayerController::getPlayerCameraPosition() {
+	switch (activeCameraType) {
+
+	case FIRST_PERSON:
+		return playerCamera->getPosition();
+		break;
+
+	case ORBIT:
+		return orbitCamera->getPosition();
+		break;
+
+	default:
+		LOG(ERR) << "PlayerController::getPlayerCameraPosition - Invalid CAMERA type.";
+	}
+
+	return vec3(0);
+}
+
+mat4 PlayerController::getViewMatrix() {
+	switch (activeCameraType) {
+
+	case FIRST_PERSON:
+		return playerCamera->getViewMatrix();
+		break;
+
+	case ORBIT:
+		return orbitCamera->getViewMatrix();
+		break;
+
+	default:
+		LOG(ERR) << "PlayerController::getViewMatrix - Invalid CAMERA type.";
+	}
+
+	return mat4(0);
+}
+
+vec3 PlayerController::getLook() {
+	switch (activeCameraType) {
+
+	case FIRST_PERSON:
+		return playerCamera->getLook();
+		break;
+
+	case ORBIT:
+		return orbitCamera->getLook();
+		break;
+
+	default:
+		LOG(ERR) << "PlayerController::getLook - Invalid CAMERA type.";
+	}
+
+	return vec3(0);
 }

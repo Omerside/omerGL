@@ -29,8 +29,12 @@ private:
 	GLFWwindow* gWindow = NULL;
 	PlayerController();
 
-	FirstPersonCamera playerCamera;
+	CameraTypes activeCameraType;
+	FirstPersonCamera* playerCamera;
+	OrbitCamera* orbitCamera;
+
 	void InitPlayerCamera();
+	void InitOrbitCamera();
 
 	bool SwitchFlashlight();
 	bool isFlashlightOn = false;
@@ -60,13 +64,13 @@ private:
 public:
 
 	MouseProperties CalcNewMouseProperties(MouseProperties in);
-	vec3 getPlayerCameraPosition() {return playerCamera.getPosition();};
-	mat4 getViewMatrix() { return playerCamera.getViewMatrix(); };
-	vec3 getLook() {return playerCamera.getLook(); };
+	vec3 getPlayerCameraPosition();
+	mat4 getViewMatrix();
+	vec3 getLook();
 	void SetGlfWindow(GLFWwindow* gWindowInput) { gWindow = gWindowInput; };
 	void ExecuteCameraMove(float yaw, float pitch);
 
-	
+
 	void MoveDirection(KeyAction d, int action);
 	void SetLook(vec3 targ);
 

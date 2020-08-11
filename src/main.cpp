@@ -11,11 +11,11 @@
 #include "glm/ext.hpp"
 #include "Log.h"
 
-
 #define  GLM_FORCE_CTOR_INIT
 
 using namespace glm;
 
+//Logging software
 structlog LOGCFG = {};
 
 //declare controllers
@@ -23,8 +23,8 @@ RootController* rootCtrl;
 
 //define window properties
 const char* APP_TITLE = "OmerGL";
-int gWindowWidth = 1024;
-int gWindowHeight = 768;
+int gWindowWidth = 1768;
+int gWindowHeight = 992;
 GLFWwindow* gWindow = NULL;
 
 void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -62,8 +62,6 @@ int main() {
 	rootCtrl->LoadLight(LIGHT_PLAYER_FLASHLIGHT, vec3(10, 10, 10), vec3(20.0f, 20, 20), vec3(10.0f, 0, 10), vec3(10, 5, 10), vec3(0, -1, 0));
 
 
-
-	
 	//main game loop
 	while (!glfwWindowShouldClose(gWindow)) {
 		
@@ -81,6 +79,8 @@ int main() {
 		//Update window info
 		showFPS(gWindow);
 
+
+		//Update... the world :O
 		rootCtrl->Update();
 		
 		// Finalize and swap buffers
@@ -97,8 +97,6 @@ bool initOpenGL() {
 		return false;
 	}
 
-	
-
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -111,8 +109,6 @@ bool initOpenGL() {
 		std::cerr << "Failed to initialize window" << std::endl;
 		return false;
 	}
-
-	
 
 	glfwMakeContextCurrent(gWindow);
 	glfwSetKeyCallback(gWindow, glfw_onKey);
@@ -139,16 +135,12 @@ bool initOpenGL() {
 	glEnable(GL_CULL_FACE); 
 	glFrontFace(GL_CCW);
 
-	
-
 	return true;
 }
 
 void initControllers(GLFWwindow* gWindowInput) {
 	rootCtrl = rootCtrl->getInstance();
 	rootCtrl->SetGlfWindow(gWindowInput);
-
-	
 }
 
 void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode) {
@@ -179,8 +171,8 @@ void showFPS(GLFWwindow * window) {
 		double fps = (double)frameCount / elapsedSeconds;
 		double msPerFrame = 1000.0 / fps;
 
-		vec3 pos = rootCtrl->TempGetCameraPosition();
-		vec3 targ = rootCtrl->TempGetLook();
+		vec3 pos = rootCtrl->GetCameraPosition();
+		vec3 targ = rootCtrl->GetLook();
 
 		std::ostringstream outs;
 		outs.precision(3);
@@ -195,5 +187,4 @@ void showFPS(GLFWwindow * window) {
 	}
 
 	frameCount++;
-	
 }

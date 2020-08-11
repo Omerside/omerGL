@@ -91,8 +91,6 @@ public:
 
 	//Load shader files to be used
 	void LoadShaders(const char* vertShader = "basic.vert", const char* fragShader = "lighting_multifunc.frag");
-
-	//Load shader files
 	
 	//Define singleton
 	static RootController* getInstance();
@@ -104,17 +102,13 @@ public:
 	//Process light and entity actions by iterating over their respective queue vectors and
 	//passing the desired actions to their controllers. Queues are cleared once done.
 	void processLightActions();
-	//void processPersistentLightActions();
 	void processEntityActions();
 
 	//Get camera properties to be passed down.
 	void SetCameraLookAt(vec3 targ);
-	vec3 TempGetCameraPosition() { return playerCtrl->getPlayerCameraPosition(); };
-	mat4 TempGetViewMatrix() { return playerCtrl->getViewMatrix(); };
-	vec3 TempGetLook() { return playerCtrl->getLook(); };
-	void TempMoveCamera(DIRECTION d) {
-		playerCtrl->MoveDirection(d);
-	};
+	vec3 GetCameraPosition() { return playerCtrl->getPlayerCameraPosition(); };
+	vec3 GetLook() { return playerCtrl->getLook(); };
+
 
 	void SystemDirection(KeyAction ka, int action);
 	void SetGlfWindow(GLFWwindow* gWindowInput);

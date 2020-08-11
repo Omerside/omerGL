@@ -86,6 +86,11 @@ enum CollisionActions {
 
 };
 
+enum CameraTypes {
+	FIRST_PERSON,
+	ORBIT
+};
+
 
 enum ActionType {
 	COLLISION,

@@ -28,6 +28,8 @@ RootController::RootController() {
 	playerCtrl->lookAt = &lookAt;
 
 	SetShader(new ShaderProgram());
+
+	LOG(DEBUG) << "RootController::RootController - successfully initialized.";
 }
 
 RootController::~RootController() {
@@ -35,6 +37,7 @@ RootController::~RootController() {
 	delete playerCtrl;
 	delete entityCtrl;
 	delete lightCtrl;
+	delete shader;
 }
 
 
@@ -47,20 +50,20 @@ RootController* RootController::getInstance() {
 }
 
 void RootController::CheckMouseInput(double posX, double posY) {
+	LOG(DEBUG) << "RootController::CheckMouseInput - Checking mouse input... ";
 	inputCtrl->OnMouseMove(posX, posY);
-
 	playerCtrl->CalcLightAction(mouseMoved, GLFW_PRESS, lightActionsQueue);
-
-	//lightActionsQueue.push_back(new LightAction(PLAYER_MOVE_MOUSE, -1, 0.0f, vec3(0)));
-	//playerCtrl->CalcLightAction(ka, PLAYER_MOVE_MOUSE, lightActionsQueue);
+	LOG(DEBUG) << "RootController::CheckMouseInput - Done ";
 }
 
 void RootController::CheckInputController(int key, int scancode, int action, int mode) {
+	LOG(DEBUG) << "RootController::CheckInputController - Checking keyboard input... ";
 	KeyAction ka = inputCtrl->OnKey(key, scancode, action, mode);
 	playerCtrl->MoveDirection(ka, action);
 
 	playerCtrl->CalcLightAction(ka, action, lightActionsQueue);
 	SystemDirection(ka, action);
+	LOG(DEBUG) << "RootController::CheckInputController - Done ";
 
 }
 
@@ -81,13 +84,16 @@ void RootController::Update() {
 	double currentTime = glfwGetTime();
 	double deltaTime = currentTime - lastTime;
 
+	LOG(DEBUG) << "ATTEMPTING TO GET CAMERA PROPERTIES";
 	view = playerCtrl->getViewMatrix();
 	projection = perspective(radians(55.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
 	shader->SetGlobalUniforms();
 
+	
 	cameraPos = playerCtrl->getPlayerCameraPosition();
 	lookAt = playerCtrl->getLook();
 	viewMat = playerCtrl->getViewMatrix();
+	LOG(DEBUG) << "CAMERA PROPERTIES OBTAINED";
 
 
 
@@ -98,8 +104,9 @@ void RootController::Update() {
 	glDisable(GL_STENCIL_TEST);
 
 	//Move camera
+	LOG(DEBUG) << "ATTEMPTING TOP EXECUTE CAMERA MOVE";
 	playerCtrl->ExecuteCameraMove(mp->gYaw, mp->gPitch);
-
+	LOG(DEBUG) << "MOVE EXECUTED";
 
 	//Draw world lights
 	processLightActions();
@@ -131,6 +138,10 @@ void RootController::SetGlfWindow(GLFWwindow* gWindowInput) {
 };
 
 void RootController::SetShader(ShaderProgram* shaderInput) {
+	if (shader != nullptr) {
+		delete shader;
+	}
+
 	shader = shaderInput;
 	entityCtrl->shader = shader;
 	lightCtrl->shader = shader;

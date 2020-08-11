@@ -82,17 +82,28 @@ void OrbitCamera::setRadius(float radius) {
 }
 
 void OrbitCamera::rotateOnObject(float yaw, float pitch) {
+
+	LOG(INFO) << "OrbitCamera::rotateOnObject - Rotating on object, yaw/pitch: " << yaw << ", " << pitch;
 	mYaw = glm::radians(yaw);
 
-	mPitch = glm::radians(pitch);
-	mPitch = glm::clamp(mPitch, -glm::pi<float>() / 2.0f + 0.1f, glm::pi<float>() / 2.0f - 0.1f);
+	//mPitch = glm::radians(pitch);
+	mPitch = glm::clamp(radians(pitch), -glm::pi<float>() / 2.0f + 0.1f, glm::pi<float>() / 2.0f - 0.1f);
+
+	float x, y, z;
+	z = mRadius * cosf(mPitch) * cosf(mYaw);
+	y = mRadius * sinf(mPitch);
+	x = mRadius * cosf(mPitch) * sinf(mYaw);
+
+	setCameraPositionVectors(x, y, z);
 
 	//spherical (regular numbers) to cartesian coords
 	mTargetPos = glm::normalize(mTargetPos); (
-		mTargetPos.x + mRadius * cosf(mPitch) * sinf(mYaw),
-		mTargetPos.y + mRadius * sinf(mPitch),
-		mTargetPos.z + mRadius * cosf(mPitch) * cosf(mYaw)
+		mTargetPos.x - x,
+		mTargetPos.y - y,
+		mTargetPos.z - z
 	);
+
+	//mLook = normalize(mTargetPos);
 }
 
 FirstPersonCamera::FirstPersonCamera():
