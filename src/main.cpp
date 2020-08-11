@@ -7,14 +7,7 @@
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
 #include "glm/gtc/matrix_transform.hpp"
-#include "Model.h"
-#include "AnimatedModel.h"
-#include "ShaderProgram.h"
 #include "RootController.h"
-#include "Texture2D.h"
-#include "Camera.h"
-#include "Mesh.h"
-#include "Light.h"
 #include "glm/ext.hpp"
 #include "Log.h"
 
@@ -28,9 +21,6 @@ structlog LOGCFG = {};
 //declare controllers
 RootController* rootCtrl;
 
-//declare shader program:
-ShaderProgram shaderProgram;
-
 //define window properties
 const char* APP_TITLE = "OmerGL";
 int gWindowWidth = 1024;
@@ -41,7 +31,7 @@ void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode)
 void glfw_OnFrameBufferSize(GLFWwindow* window, int width, int height);
 void glfw_onMouseMove(GLFWwindow* window, double posX, double posY);
 void showFPS(GLFWwindow * window);
-void initControllers(GLFWwindow* gWindow, ShaderProgram* shaderProgram);
+void initControllers(GLFWwindow* gWindow);
 bool initOpenGL();
 
 
@@ -55,7 +45,7 @@ int main() {
 	}
 
 	//creating shader
-	shaderProgram.LoadShaders("basic.vert", "lighting_multifunc.frag");
+	rootCtrl->LoadShaders();
 
 	//Define some objects
 	rootCtrl->LoadEntity("floor.dae", ENTITY_STATIC, "tile_floor.jpg", vec3(4, 1, 4), vec3(1));
@@ -71,12 +61,8 @@ int main() {
 	rootCtrl->LoadLight(LIGHT_SPOT, vec3(10, 10, 10), vec3(20.0f, 0, 20), vec3(10.0f, 0, 10), vec3(10, 5, 10), vec3(0, -1, 0));
 	rootCtrl->LoadLight(LIGHT_PLAYER_FLASHLIGHT, vec3(10, 10, 10), vec3(20.0f, 20, 20), vec3(10.0f, 0, 10), vec3(10, 5, 10), vec3(0, -1, 0));
 
-	shaderProgram.Use();
 
 
-	mat4 model, view, projection;
-	ShaderProgram::gProjection = &projection;
-	ShaderProgram::gView = &view;
 	
 	//main game loop
 	while (!glfwWindowShouldClose(gWindow)) {
@@ -92,35 +78,8 @@ int main() {
 			}
 		*/
 
+		//Update window info
 		showFPS(gWindow);
-
-
-		
-		// Reset stencil and depth tests
-		glClearStencil(0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-		glDisable(GL_STENCIL_TEST);
-		//**
-
-		//REPLACED BY ROOTCONTROLLER
-		view = rootCtrl->TempGetViewMatrix();
-		projection = perspective(radians(55.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
-		shaderProgram.SetGlobalUniforms();
-		
-
-		/*
-		Calculating position of camera-light
-		This will be used later in a controller.
-		lightPos = rootCtrl->TempGetCameraPosition();//cameraObj.getPosition();
-		lightPos.y += 0.5f;
-		spotLights.setPosition(vec3(lightPos));
-		*/
-		
-
-		//REPLACED BY rootcontroller
-		//This will be used to calculate direction of camera-light
-		//spotLights.setDirection(rootCtrl->TempGetLook());//(cameraObj.getLook());
 
 		rootCtrl->Update();
 		
@@ -145,7 +104,7 @@ bool initOpenGL() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	gWindow = glfwCreateWindow(gWindowWidth, gWindowHeight, APP_TITLE, NULL, NULL);
-	initControllers(gWindow, &shaderProgram);
+	initControllers(gWindow);
 
 
 	if (gWindow == NULL) {
@@ -185,10 +144,10 @@ bool initOpenGL() {
 	return true;
 }
 
-void initControllers(GLFWwindow* gWindowInput, ShaderProgram* shaderProgram) {
+void initControllers(GLFWwindow* gWindowInput) {
 	rootCtrl = rootCtrl->getInstance();
 	rootCtrl->SetGlfWindow(gWindowInput);
-	rootCtrl->SetShader(shaderProgram);
+
 	
 }
 

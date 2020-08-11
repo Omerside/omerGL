@@ -5,14 +5,16 @@
 #include <algorithm>
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
-#include "glm/ext.hpp"
 #include "glm/glm.hpp"
+#include "glm/ext.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 #include "Log.h"
 #include "InputController.h"
 #include "PlayerController.h"
 #include "EntityController.h"
 #include "LightController.h"
 #include "ControllerDefinitions.h"
+
 
 
 using namespace std;
@@ -49,24 +51,48 @@ private:
 	double lastTime;
 	MouseProperties* mp;
 	bool gWireframe = false;
-	ShaderProgram* shader;
+	
 	KeyAction mouseMoved;
 
 	
 protected:
+
+	//shader program
+	ShaderProgram* shader;
+
+	//The model, view, and project which will be sent to the shader for drawing.
+	mat4 model, view, projection;
+
+
+	//Width and height of the GL window we are opening.
+	int gWindowWidth, gWindowHeight;
+
+
+	//Action queues for lights
 	vector<LightAction*> lightActionsQueue;
 	vector<LightActionDynamic*> dynamicLightActionsQueue;
 
+	//Action queues for entities
 	vector<EntityAction*> entityActionsQueue;
 
+	//Position of camera in world
 	vec3 cameraPos;
+	
+	//Camera view direction
 	vec3 lookAt;
+
+	//Camera view matrix
 	mat4 viewMat;
 
 public:
 
 	//Set shader
 	void SetShader(ShaderProgram* shaderInput);
+
+	//Load shader files to be used
+	void LoadShaders(const char* vertShader = "basic.vert", const char* fragShader = "lighting_multifunc.frag");
+
+	//Load shader files
 	
 	//Define singleton
 	static RootController* getInstance();
@@ -78,7 +104,7 @@ public:
 	//Process light and entity actions by iterating over their respective queue vectors and
 	//passing the desired actions to their controllers. Queues are cleared once done.
 	void processLightActions();
-	void processPersistentLightActions();
+	//void processPersistentLightActions();
 	void processEntityActions();
 
 	//Get camera properties to be passed down.

@@ -27,7 +27,7 @@ RootController::RootController() {
 	playerCtrl->viewMat = &viewMat;
 	playerCtrl->lookAt = &lookAt;
 
-	
+	SetShader(new ShaderProgram());
 }
 
 RootController::~RootController() {
@@ -81,11 +81,21 @@ void RootController::Update() {
 	double currentTime = glfwGetTime();
 	double deltaTime = currentTime - lastTime;
 
+	view = playerCtrl->getViewMatrix();
+	projection = perspective(radians(55.f), (float)gWindowWidth / (float)gWindowHeight, 0.1f, 100.0f);
+	shader->SetGlobalUniforms();
+
 	cameraPos = playerCtrl->getPlayerCameraPosition();
 	lookAt = playerCtrl->getLook();
 	viewMat = playerCtrl->getViewMatrix();
 
-	//playerCtrl->CalcLightExistingLight(lightActionsQueue);
+
+
+	//Reset a few GL parameters
+	glClearStencil(0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	glDisable(GL_STENCIL_TEST);
 
 	//Move camera
 	playerCtrl->ExecuteCameraMove(mp->gYaw, mp->gPitch);
@@ -115,13 +125,26 @@ void RootController::SetGlfWindow(GLFWwindow* gWindowInput) {
 	playerCtrl->SetGlfWindow(gWindow);
 	entityCtrl->SetGlfWindow(gWindow);
 	lightCtrl->SetGlfWindow(gWindow);
+
+	glfwGetWindowSize(gWindow, &gWindowWidth, &gWindowHeight);
+
 };
 
 void RootController::SetShader(ShaderProgram* shaderInput) {
 	shader = shaderInput;
 	entityCtrl->shader = shader;
 	lightCtrl->shader = shader;
+
+	ShaderProgram::gProjection = &projection;
+	ShaderProgram::gView = &view;
+
 };
+
+void RootController::LoadShaders(const char* vertShader, const char* fragShader) {
+	//creating shader
+	shader->LoadShaders(vertShader, fragShader);
+	shader->Use();
+}
 
 int RootController::LoadEntity(
 	const char* daeFile,
@@ -200,3 +223,4 @@ void RootController::processLightActions() {
 void RootController::processEntityActions() {
 
 }
+
