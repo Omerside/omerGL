@@ -58,7 +58,7 @@ glm::mat4 Camera::getViewMatrix() const {
 void Camera::setLookAt(vec3& target) {
 
 	mTargetPos = target;
-	mLook = normalize(getPosition() - mTargetPos);
+	mLook = target;//normalize(getPosition() - mTargetPos);
 }
 
 void Camera::setLookAt() {
@@ -83,10 +83,8 @@ void OrbitCamera::setRadius(float radius) {
 
 void OrbitCamera::rotateOnObject(float yaw, float pitch) {
 
-	LOG(INFO) << "OrbitCamera::rotateOnObject - Rotating on object, yaw/pitch: " << yaw << ", " << pitch;
+	LOG(DEBUG) << "OrbitCamera::rotateOnObject - Rotating on object, yaw/pitch: " << yaw << ", " << pitch;
 	mYaw = glm::radians(yaw);
-
-	//mPitch = glm::radians(pitch);
 	mPitch = glm::clamp(radians(pitch), -glm::pi<float>() / 2.0f + 0.1f, glm::pi<float>() / 2.0f - 0.1f);
 
 	float x, y, z;
@@ -99,11 +97,27 @@ void OrbitCamera::rotateOnObject(float yaw, float pitch) {
 	//spherical (regular numbers) to cartesian coords
 	mTargetPos = glm::normalize(mTargetPos); (
 		mTargetPos.x - x,
-		mTargetPos.y - y,
-		mTargetPos.z - z
+		mTargetPos.y + y,
+		mTargetPos.z + z
 	);
+}
 
-	//mLook = normalize(mTargetPos);
+void OrbitCamera::rotateOnObject(float yaw, float pitch, vec3 &target) {
+
+	LOG(DEBUG) << "OrbitCamera::rotateOnObject - Rotating on object, yaw/pitch: " << yaw << ", " << pitch;
+	
+
+	mYaw = glm::radians(yaw);
+	mPitch = glm::clamp(radians(pitch), -glm::pi<float>() / 2.0f + 0.1f, glm::pi<float>() / 2.0f - 0.1f);
+
+	float x, y, z;
+	z = (mRadius * cosf(mPitch) * cosf(mYaw)) + target.z;
+	y = (mRadius * sinf(mPitch) ) + target.y;
+	x = (mRadius * cosf(mPitch) * sinf(mYaw)) + target.x;
+
+	setCameraPositionVectors(x, y, z);
+	mTargetPos = (target);
+
 }
 
 FirstPersonCamera::FirstPersonCamera():

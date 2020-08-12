@@ -128,3 +128,54 @@ void EntityController::EnableEntityOutline(int entityID, vec3* colorInput, vec3*
 	LOG() << "enabling outline of entity ID " << entityID;
 	entities[entityID]->EnableOutline(*colorInput, *scaleInput, *outlineColorHiddenInput);
 }
+
+
+void EntityController::ProcessAction(EntityAction actionObj) {
+	if (actionObj.id == -1) {
+		LOG(ERR) << "EntityController::ProcessAction - unassigned entity ID.";
+		return;
+	}
+	switch (actionObj.action) {
+
+	case LIGHT_SET_LAYER_HIDDEN:
+		//UpdateLightLayer(HIDDEN, actionObj.id);
+		break;
+
+	case LIGHT_SET_LAYER_VISIBLE:
+		//UpdateLightLayer(VISIBLE, actionObj.id);
+		break;
+
+	case LIGHT_SET_LAYER_INVISIBLE:
+		//UpdateLightLayer(INVISIBLE, actionObj.id);
+		break;
+
+	case ENTITY_UPDATE_POS:
+		SetEntityPosition(actionObj.id, actionObj.v);
+		break;
+
+	case ENTITY_UPDATE_DIR:
+		SetEntityDirection(actionObj.id, actionObj.v);
+		break;
+
+	case ENTITY_DELETE:
+		//DeleteLight(actionObj.id);
+		break;
+
+	default:
+		LOG(ERR) << "LightController::ProcessAction - Unsupported command.";
+	}
+
+}
+
+
+void EntityController::SetEntityPosition(int id, vec3 pos) {
+	entityProperties[id].position += pos;
+}
+
+void EntityController::SetEntityDirection(int id, vec3 dir) {
+
+}
+
+vec3 EntityController::GetEntityPosition(int id) {
+	return entityProperties[id].position;
+}

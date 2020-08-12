@@ -36,14 +36,18 @@ enum PlayerActions {
 //Defines types of entities.
 enum EntityTypes {
 	ENTITY_DYNAMIC, //Entity capable of world movement and animation
-	ENTITY_STATIC //Static entity incapable of movement or animation
+	ENTITY_STATIC, //Static entity incapable of movement or animation
+	ENTITY_PLAYER_AVATAR //The entity which will represent the player's character.
 };
 
 //Define actions which can be performed by an entity
 enum EntityActions {
-	ENTITY_SET_LAYER,
+	ENTITY_SET_LAYER_INVISIBLE,
+	ENTITY_SET_LAYER_HIDDEN,
+	ENTITY_SET_LAYER_VISIBLE,
 	ENTITY_UPDATE_POS,
-	ENTITY_UPDATE_DIR
+	ENTITY_UPDATE_DIR,
+	ENTITY_DELETE
 };
 
 
@@ -130,11 +134,11 @@ struct LightAction {
 	const int id;
 	float f;
 	glm::vec3 v;
-	LightAction(LightActions actionIn, int idIn, float fIn = 0.0f, glm::vec3 vIn = glm::vec3(0)) : id(idIn) {
-		action = actionIn;
-		f = fIn;
-		v = vIn;
-	}
+	LightAction(LightActions actionIn, int idIn, float fIn = 0.0f, glm::vec3 vIn = glm::vec3(0)) : 
+		id(idIn),
+		action(actionIn),
+		f(fIn),
+		v(vIn){}
 };
 
 //LightAction is passed to the LightController. The type of action dictates which
@@ -157,18 +161,31 @@ struct EntityAction {
 	int id;
 	float f;
 	glm::vec3 v;
-	EntityAction(EntityActions actionIn, int idIn, float fIn = 0.0f, glm::vec3 vIn = glm::vec3(0)) {
-		action = actionIn;
-		id = idIn;
-		f = fIn;
-		v = vIn;
-	}
+	EntityAction(EntityActions actionIn, int idIn, float fIn = 0.0f, glm::vec3 vIn = glm::vec3(0)) :
+		id(idIn),
+		action(actionIn),
+		f(fIn),
+		v(vIn) {};
 };
+
+struct EntityActionDynamic {
+	const EntityActions action;
+	const int id;
+	const float* f;
+	const glm::vec3* v;
+	EntityActionDynamic(EntityActions actionIn, int idIn, float* fIn = nullptr, glm::vec3* vIn = nullptr) :
+		id(idIn),
+		action(actionIn),
+		f(fIn),
+		v(vIn) {};
+};
+
 
 struct EntityProperties {
 	EntityTypes type;
 	int entityId;
 	glm::vec3 position = glm::vec3(0);
+	glm::vec3 direction = glm::vec3(0);
 	int textureId = -1; // default value for untextured entity
 	
 };

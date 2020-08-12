@@ -48,6 +48,7 @@ class OrbitCamera : public Camera {
 public:
 	OrbitCamera();
 	virtual void rotateOnObject(float yaw, float pitch); // degrees, not radians
+	virtual void rotateOnObject(float yaw, float pitch, vec3 &target);
 	void setRadius(float radius);
 
 private:

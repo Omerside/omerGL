@@ -21,6 +21,7 @@ RootController::RootController() {
 	mp->gPitch = newMp.gPitch;
 	mp->gYaw = newMp.gYaw;
 	*/
+
 	lastTime = glfwGetTime();
 
 	playerCtrl->cameraPos = &cameraPos;
@@ -62,6 +63,7 @@ void RootController::CheckInputController(int key, int scancode, int action, int
 	playerCtrl->MoveDirection(ka, action);
 
 	playerCtrl->CalcLightAction(ka, action, lightActionsQueue);
+	playerCtrl->CalcEntityAction(ka, action, entityActionsQueue);
 	SystemDirection(ka, action);
 	LOG(DEBUG) << "RootController::CheckInputController - Done ";
 
@@ -108,12 +110,17 @@ void RootController::Update() {
 	playerCtrl->ExecuteCameraMove(mp->gYaw, mp->gPitch);
 	LOG(DEBUG) << "MOVE EXECUTED";
 
+	if (playerCtrl->playerCharacterModelID != -1) {
+		playerAvatarPos = entityCtrl->GetEntityPosition(playerCtrl->playerCharacterModelID);
+	}
+
 	//Draw world lights
 	processLightActions();
 	lightCtrl->DrawLights();
 
 	//Draw Entities
 	shader->SetUniform("material.shininess", 10.0f);
+	processEntityActions();
 	entityCtrl->DrawEntities(&deltaTime);
 
 
@@ -174,6 +181,8 @@ int RootController::LoadEntity(
 	int entityID = entityCtrl->LoadEntity(daeFile, texFile, type, pos);
 	entityCtrl->SetEntityScale(entityID, &scale);
 
+
+
 	if (activeAnim) {
 		LOG(DEBUG) << "Found active animation. Setting ID " << entityID << " to have the active animation " << activeAnim;
 		entityCtrl->SetActiveAnimation(entityID, activeAnim, &activeAnimLooping);
@@ -182,6 +191,12 @@ int RootController::LoadEntity(
 	if (isOutlined) {
 		LOG(DEBUG) << "Found outline.";
 		entityCtrl->EnableEntityOutline(entityID, &outlineColor, &vec3(1.1, 1.0, 1.1), &outlineColorHidden);
+	}
+
+	if (type == ENTITY_PLAYER_AVATAR) {
+		playerCtrl->playerCharacterModelID = entityID;
+		playerAvatarPos = entityCtrl->GetEntityPosition(entityID);
+		playerCtrl->cameraTargetPos = &playerAvatarPos;
 	}
 
 	LOG(DEBUG) << "Entity loaded.";
@@ -232,6 +247,16 @@ void RootController::processLightActions() {
 }
 
 void RootController::processEntityActions() {
+	playerCtrl->GetEntityPersistentAction(entityActionsQueue);
 
+	LOG(DEBUG) << "About to process light actions...";
+	for_each(entityActionsQueue.begin(), entityActionsQueue.end(), [&](EntityAction* &q) {
+		entityCtrl->ProcessAction(*q);
+		delete q;
+	});
+
+	entityActionsQueue.clear();
+
+	LOG(DEBUG) << "PROCESSED ALL light actions. capacity:  " << lightActionsQueue.capacity();
 }
 

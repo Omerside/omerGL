@@ -28,7 +28,7 @@ void PlayerController::InitPlayerCamera(){
 	}
 
 	playerCamera->setMoveSpeed(0.25f);
-	playerCamera->setCameraPositionVectors(vec3(0.35f, 4.6f, 10.0f));
+	//playerCamera->setCameraPositionVectors(vec3(0.35f, 4.6f, 10.0f));
 	SetLook(vec3(0.1));
 
 	LOG(DEBUG) << "PlayerController::InitPlayerCamera - DONE INITIALIZING FirstPersonCamera";
@@ -46,10 +46,10 @@ void PlayerController::InitOrbitCamera() {
 	}
 
 	orbitCamera->setMoveSpeed(0.25f);
-	orbitCamera->setRadius(10.0f);
+	orbitCamera->setRadius(25.0f);
 	SetLook(vec3(0.1));
-	//orbitCamera->setCameraPositionVectors(vec3(0.35f, 4.6f, 10.0f));
-	
+	orbitCamera->setCameraPositionVectors(vec3(0.35f, 4.6f, 10.0f));
+	SetCameraTargetPos(new vec3(0));
 	LOG(DEBUG) << "PlayerController::InitOrbitCamera - DONE INITIALIZING OrbitCamera";
 
 	
@@ -67,13 +67,12 @@ void PlayerController::ExecuteCameraMove(float yaw, float pitch) {
 	switch (activeCameraType) {
 
 	case FIRST_PERSON:
-		//playerCamera->ExecuteMove(yaw, pitch);
+
 		playerCamera->rotateOnCamera(yaw, pitch);
 		break;
 		
 	case ORBIT:
-		//playerCamera->rotateOnObject(yaw, pitch);
-		orbitCamera->rotateOnObject(yaw, pitch);
+		orbitCamera->rotateOnObject(yaw, pitch, *cameraTargetPos);
 		break;
 
 	default:
@@ -83,10 +82,7 @@ void PlayerController::ExecuteCameraMove(float yaw, float pitch) {
 }
 
 void PlayerController::MoveDirection(DIRECTION d) {
-	//LOG(DEBUG) << "attempting to move player in direction " << d;
-	//playerCamera->move(d);
 	LOG(DEBUG) << "PlayerController::MoveDirection - Beginning move direction. Type: " << d;
-
 
 	switch (activeCameraType) {
 
@@ -96,7 +92,7 @@ void PlayerController::MoveDirection(DIRECTION d) {
 
 	case ORBIT:
 		break;
-		//orbitCamera->move(d);
+
 	default:
 		LOG(ERR) << "PlayerController::MoveDirection - Invalid CAMERA type.";
 	}
@@ -105,7 +101,6 @@ void PlayerController::MoveDirection(DIRECTION d) {
 }
 
 void PlayerController::MoveDirection(KeyAction d, int action) {
-	LOG(DEBUG) << "5";
 
 	if (action == GLFW_PRESS) {
 		MoveDirection(d.playerDirectionOnPress);
@@ -205,7 +200,6 @@ void PlayerController::CalcLightAction(KeyAction d, int action, vector<LightActi
 			LOG(ERR) << "PlayerController::CalcLightAction - Invalid action type.";
 		}
 	}
-	LOG(DEBUG) << "6";
 }
 
 void PlayerController::GetLightPersistentAction(vector<LightAction*> &actionQueue) {
@@ -231,49 +225,97 @@ void PlayerController::GetLightPersistentAction(vector<LightAction*> &actionQueu
 	LOG(DEBUG) << "PlayerController::GetLightPersistentAction - PROCESSED all persistent actions.";
 }
 
-/*
-EntityAction** PlayerController::CalcEntityAction(KeyAction d, int action) {
+void PlayerController::GetEntityPersistentAction(vector<EntityAction*> &actionQueue) {
+	LOG(DEBUG) << "PlayerController::GetLightPersistentAction - Attempting to merge persistent and single-cycle queue values... dynamic queue size: " << dynamicLightActionsQueue.size();
+
+	for (int i = 0; i < dynamicEntityActionsQueue.size(); i++) {
+		if (dynamicEntityActionsQueue[i]->v == nullptr && dynamicEntityActionsQueue[i]->f == nullptr) {
+			actionQueue.push_back(new EntityAction(dynamicEntityActionsQueue[i]->action, dynamicEntityActionsQueue[i]->id));
+
+		}
+		else if (dynamicEntityActionsQueue[i]->v == nullptr || dynamicEntityActionsQueue[i]->f == nullptr) {
+			if (dynamicEntityActionsQueue[i]->v == nullptr) {
+				actionQueue.push_back(new EntityAction(dynamicEntityActionsQueue[i]->action, dynamicEntityActionsQueue[i]->id, *dynamicEntityActionsQueue[i]->f));
+			}
+			else {
+				actionQueue.push_back(new EntityAction(dynamicEntityActionsQueue[i]->action, dynamicEntityActionsQueue[i]->id, 0, *dynamicEntityActionsQueue[i]->v));
+			}
+		}
+		else {
+			actionQueue.push_back(new EntityAction(dynamicEntityActionsQueue[i]->action, dynamicEntityActionsQueue[i]->id, *dynamicEntityActionsQueue[i]->f, *dynamicEntityActionsQueue[i]->v));
+		}
+
+	}
+	LOG(DEBUG) << "PlayerController::GetLightPersistentAction - PROCESSED all persistent actions.";
+}
+
+void PlayerController::CalcEntityAction(KeyAction d, int action, vector<EntityAction*> &actionQueue) {
+	if (playerCharacterModelID != -1) {
+		//actionQueue.push_back(new EntityAction(ENTITY_UPDATE_DIR, playerCharacterModelID, 0.0f, *lookAt));
+	}
 
 	if (action == GLFW_PRESS) {
-		switch (d.playerDirectionOnPress) {
+		vec3 movement;
+		switch (d.playerActionOnPress) {
 
 		case PLAYER_MOVE_LEFT:
 		case PLAYER_MOVE_RIGHT:
 		case PLAYER_MOVE_UP:
 		case PLAYER_MOVE_DOWN:
 		case PLAYER_MOVE_FORWARD:
+			movement = (*cameraTargetPos - *cameraPos);
+			movement = normalize(vec3(movement.x, 0, movement.z))*moveSpeed;
+			actionQueue.push_back(new EntityAction(ENTITY_UPDATE_POS, playerCharacterModelID, 0.0f, vec3(movement.x, 0, movement.z)));
+			dynamicEntityActionsQueue.push_back(new EntityActionDynamic(ENTITY_UPDATE_POS, playerCharacterModelID, nullptr, new vec3(movement.x, 0, movement.z)));
+
 		case PLAYER_MOVE_BACK:
-			LOG(DEBUG) << "Move entity requested.";
-			actions[0] = new EntityAction(ENTITY_UPDATE_POS, playerCharacterModelID);
-			actions[0] = new EntityAction(ENTITY_UPDATE_DIR, playerCharacterModelID);
+			
 
 			break;
 
+		case PLAYER_MOVE_MOUSE:
+			break;
+
+		case PLAYER_MOVE_STOP:
+			break;
+
+		case PLAYER_NONE:
+			break;
+
 		default:
-			LOG(ERR) << "PlayerController::CalcEntityAction - Invalid action type.";
+			LOG(ERR) << "PlayerController::CalcLightAction - Invalid action type.";
 		}
 
 	}
 	else if (action == GLFW_RELEASE) {
-		switch (d.playerDirectionOnRelease) {
+		switch (d.playerActionOnRelease) {
 
-		case PLAYER_MOVE_LEFT:
-		case PLAYER_MOVE_RIGHT:
-		case PLAYER_MOVE_UP:
-		case PLAYER_MOVE_DOWN:
-		case PLAYER_MOVE_FORWARD:
-		case PLAYER_MOVE_BACK:
-			EntityAction* actions[1];
-			actions[1] = new EntityAction(ENTITY_UPDATE_POS, playerCharacterModelID);
+		case PLAYER_MOVE_STOP:
+			for (int i = 0; i < dynamicEntityActionsQueue.size(); i++) {
+				switch (d.playerActionOnPress) {
+				case PLAYER_MOVE_LEFT:
+				case PLAYER_MOVE_RIGHT:
+				case PLAYER_MOVE_UP:
+				case PLAYER_MOVE_DOWN:
+				case PLAYER_MOVE_FORWARD:
+				case PLAYER_MOVE_BACK:
+					LOG(DEBUG) << "PlayerController::CalcLightAction - Attempting to remove dynamic action...";
+					dynamicEntityActionsQueue.erase(dynamicEntityActionsQueue.begin() + i);
+					LOG(DEBUG) << "PlayerController::CalcLightAction - Action removed.";
+				case PLAYER_NONE:
+					break;
+				default:
+					LOG(ERR) << "PlayerController::CalcLightAction - Invalid action type.";
+				}
+			}
 
+		case PLAYER_NONE:
 			break;
-
 		default:
-			LOG(ERR) << "PlayerController::CalcEntityAction - Invalid action type.";
+			LOG(ERR) << "PlayerController::CalcLightAction - Invalid action type.";
 		}
 	}
-}*/
-
+}
 void PlayerController::SetLook(vec3 targ) {
 	
 	switch (activeCameraType) {
@@ -289,6 +331,10 @@ void PlayerController::SetLook(vec3 targ) {
 	default:
 		LOG(ERR) << "PlayerController::SetLook - Invalid CAMERA type.";
 	}
+}
+
+void PlayerController::SetCameraTargetPos(vec3* targetPos) {
+	cameraTargetPos = targetPos;
 }
 
 void PlayerController::SetFlashlight(int lightID) {

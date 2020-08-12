@@ -74,6 +74,7 @@ protected:
 
 	//Action queues for entities
 	vector<EntityAction*> entityActionsQueue;
+	vector<EntityActionDynamic*> dynamicEntityActionsQueue;
 
 	//Position of camera in world
 	vec3 cameraPos;
@@ -83,6 +84,8 @@ protected:
 
 	//Camera view matrix
 	mat4 viewMat;
+
+	vec3 playerAvatarPos;
 
 public:
 

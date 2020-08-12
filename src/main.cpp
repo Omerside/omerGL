@@ -51,7 +51,7 @@ int main() {
 	rootCtrl->LoadEntity("floor.dae", ENTITY_STATIC, "tile_floor.jpg", vec3(4, 1, 4), vec3(1));
 	rootCtrl->LoadEntity("char_running_v2.dae", ENTITY_DYNAMIC, "Character Texture.png", vec3(1, 1, 1), vec3(5, 0, 1), true, "Armature.001");
 	rootCtrl->LoadEntity("char_running_v2.dae", ENTITY_DYNAMIC, "Character Texture.png", vec3(1, 1, 1), vec3(1, 0, 5), true, "Armature.001", true);
-	rootCtrl->LoadEntity("char_running_v2.dae", ENTITY_DYNAMIC, "Character Texture.png", vec3(1, 1, 1), vec3(5, 0, 5), true, "Armature.001", true);
+	rootCtrl->LoadEntity("char_running_v2.dae", ENTITY_PLAYER_AVATAR, "Character Texture.png", vec3(1, 1, 1), vec3(5, 0, 5), true, "Armature.001", true);
 
 
 	//Define some lights

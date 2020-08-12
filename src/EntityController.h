@@ -44,12 +44,20 @@ private:
 	void DrawOutlinedEntity(int* entityID);
 	void DrawEntity(int* entityID);
 
+	void SetEntityPosition(int id, vec3 pos);
+	void SetEntityDirection(int id, vec3 dir);
+
+	//process actions delegated by the root controller
+	void ProcessAction(EntityAction actionObj);
+
 	
 public:
 	
 	//creates a dynamic entity and returns the entity ID
 	int LoadEntity(const char* daeFile, const char* texFile, EntityTypes type, vec3 pos);
 	void DrawEntities(double* deltaTime);
+
+	vec3 GetEntityPosition(int id);
 
 	//modify entities -- true = success (where applicable)
 	bool SetActiveAnimation(int entityID, const char* animName, bool* isLooping);

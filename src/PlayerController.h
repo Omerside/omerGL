@@ -42,8 +42,10 @@ private:
 	int playerCharacterModelID = -1;
 
 	vec3* cameraPos;
+	vec3* cameraTargetPos;
 	vec3* lookAt;
 	mat4* viewMat;
+	float moveSpeed = 0.2f;
 	
 	//Set a flashlight which follows the camera and points at what the player is targeting
 	void SetFlashlight(int lightID);
@@ -51,12 +53,16 @@ private:
 
 	//Check for actions taken by player from outside factors
 	void CalcLightAction(KeyAction d, int action, vector<LightAction*> &actionQueue);
+	vector<LightActionDynamic*> dynamicLightActionsQueue;
 
 	//Append the list of persistent actions to the main action queue for the light controller
 	void GetLightPersistentAction(vector<LightAction*> &actionQueue);
-	vector<LightActionDynamic*> dynamicLightActionsQueue;
+	void GetEntityPersistentAction(vector<EntityAction*> &actionQueue);
 
-	//EntityAction** CalcEntityAction(KeyAction d, int action);
+	//Append the list of persistent actions to the main action queue for the entity controller
+	void CalcEntityAction(KeyAction d, int action, vector<EntityAction*> &actionQueue);
+	vector<EntityActionDynamic*> dynamicEntityActionsQueue;
+
 
 	void MoveDirection(DIRECTION d);
 	
@@ -73,7 +79,7 @@ public:
 
 	void MoveDirection(KeyAction d, int action);
 	void SetLook(vec3 targ);
-
+	void SetCameraTargetPos(vec3 *targetPos);
 	
 };
 
