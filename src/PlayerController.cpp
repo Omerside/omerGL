@@ -250,12 +250,16 @@ void PlayerController::GetEntityPersistentAction(vector<EntityAction*> &actionQu
 }
 
 void PlayerController::CalcEntityAction(KeyAction d, int action, vector<EntityAction*> &actionQueue) {
+	vec3 movement;
 	if (playerCharacterModelID != -1) {
-		//actionQueue.push_back(new EntityAction(ENTITY_UPDATE_DIR, playerCharacterModelID, 0.0f, *lookAt));
+		movement = (*cameraTargetPos - *cameraPos);
+		movement = normalize(vec3(movement.x, movement.y, movement.z));
+		actionQueue.push_back(new EntityAction(ENTITY_UPDATE_DIR, playerCharacterModelID, 0.0f, movement));
+		LOG(DEBUG) << "PlayerController::CalcEntityAction - Setting direction to " << movement;
 	}
 
 	if (action == GLFW_PRESS) {
-		vec3 movement;
+		
 		switch (d.playerActionOnPress) {
 
 		case PLAYER_MOVE_LEFT:
@@ -400,6 +404,7 @@ vec3 PlayerController::getLook() {
 		break;
 
 	case ORBIT:
+		LOG(DEBUG) << "PlayerController::getLook - returning " << orbitCamera->getLook();
 		return orbitCamera->getLook();
 		break;
 

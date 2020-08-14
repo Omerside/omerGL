@@ -1,5 +1,6 @@
 #ifndef MODEL_H
 #define MODEL_H
+#define _USE_MATH_DEFINES
 
 #include "Mesh.h"
 #include "Texture2D.h"
@@ -10,6 +11,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <iostream>
+#include <math.h>
 #include <stb_image/stb_image.h>
 #include <unordered_map> 
 
@@ -58,6 +60,8 @@ public:
 	void LoadTextures(Texture2D texInput);
 	bool LoadObjMesh(std::string file);
 	void SetScale(vec3 scaleIn);
+	void SetRotation(float rotationIn);
+	void SetRotation(vec3 rotationIn);
 	void EnableOutline(vec3 colorInput, vec3 scaleInput, vec3 outlineColorHiddenInput);
 	void EnableOutline();
 	void DisableOutline();
@@ -88,6 +92,7 @@ protected:
 	//baseline
 	const aiScene* scene;
 	vec3 scale = vec3(1.0f);
+	GLfloat rotation = 0;
 	string directory;
 	ShaderProgram *shader;
 

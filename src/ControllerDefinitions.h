@@ -185,7 +185,7 @@ struct EntityProperties {
 	EntityTypes type;
 	int entityId;
 	glm::vec3 position = glm::vec3(0);
-	glm::vec3 direction = glm::vec3(0);
+	glm::vec3 direction = glm::vec3(1);
 	int textureId = -1; // default value for untextured entity
 	
 };

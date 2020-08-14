@@ -156,8 +156,8 @@ void FirstPersonCamera::rotateOnCamera(float yaw, float pitch) {
 	y = sin(mPitch);
 	z = cos(mPitch)*sin(mYaw);
 
-	setCameraPositionVectors(x, y, z);
-	mTargetPos = normalize(vec3(x, y, z)) + mPosition;
+	setCameraPositionVectors(-x, -y, -z);
+	mTargetPos = normalize(vec3(-x, -y, -z)) + mPosition;
 	//updateLookVector();
 }
 

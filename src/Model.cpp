@@ -175,9 +175,13 @@ void  Model::DrawOutline(vec3 pos) {
 	shader->SetUniform("material.ambient", outlineColor);
 	shader->SetUniform("isSolidColor", 1.0f);
 
+	//Set model scale
 	mat4 model = translate(mat4(), vec3(pos.x, pos.y-(outlineSize.y-scale.y)*2, pos.z)) * glm::scale(mat4(), outlineSize);
 
-	shader->SetUniform("model", model);
+	//Set model rotation
+	model = rotate(model, rotation, vec3(0, 1, 0));
+
+	shader->SetUniform("model", rotate(model, rotation, vec3(0, 1, 0)));
 
 	mMesh.draw();
 	shader->SetUniform("isSolidColor", 0.0f);
@@ -189,9 +193,14 @@ void  Model::DrawOutlineHidden(vec3 pos) {
 	shader->SetUniform("material.ambient", outlineColorHidden);
 	shader->SetUniform("isSolidColor", 1.0f);
 
+	//Set model scale
 	mat4 model = translate(mat4(), vec3(pos.x, pos.y - (outlineSize.y - scale.y) * 2, pos.z)) * glm::scale(mat4(), outlineSize);
+	
+	//Set model rotation
+	model = rotate(model, rotation, vec3(0, 1, 0));
 
-	shader->SetUniform("model", model);
+	
+	shader->SetUniform("model", rotate(model, rotation, vec3(0, 1, 0)));
 
 
 	mMesh.draw();
@@ -587,4 +596,22 @@ void Model::EnableOutline() {
 
 void Model::DisableOutline() {
 	hasOutline = false;
+}
+
+void Model::SetRotation(float rotationIn) {
+	rotation = rotationIn;
+	LOG(INFO) << "Model::SetRotation - rotation set to " << rotation;
+
+}
+
+
+void Model::SetRotation(vec3 rotationIn) {
+	float angle;
+	LOG(INFO) << "Model::SetRotation - X Z VALUES " << rotationIn.x << " " << rotationIn.z;
+	if (rotationIn.z < 0) {
+		angle = -(((atan(rotationIn.x/abs(rotationIn.z)) + 3.6) * M_PI) / 3.60);
+	} else {
+		angle = (atan(rotationIn.x / rotationIn.z)*M_PI) / 3.6;
+	}
+	SetRotation(angle);
 }

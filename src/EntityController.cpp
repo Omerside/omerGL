@@ -113,6 +113,20 @@ void EntityController::DrawEntity(int* entityID) {
 	textures[textureID].unbind(0);
 }
 
+void EntityController::DrawEntity(int* entityID, vec3 direction) {
+
+
+	int textureID = entityProperties[*entityID].textureId;
+	if (textureID == -1) {
+		LOG(DEBUG) << "no texture found for entity ID " << &entityID;
+	}
+
+
+	textures[textureID].bind(0);
+	entities[*entityID]->DrawModel(entityProperties[*entityID].position, -1, deltaTime);
+	textures[textureID].unbind(0);
+}
+
 bool EntityController::SetActiveAnimation(int entityID, const char* animName, bool* isLooping) {
 	LOG(DEBUG) << "Setting active animation for entity ID " << entityID << " animation name: " << animName;
 	LOG(DEBUG) << "Directory: " << entities[entityID]->GetDirectory();
@@ -173,7 +187,10 @@ void EntityController::SetEntityPosition(int id, vec3 pos) {
 }
 
 void EntityController::SetEntityDirection(int id, vec3 dir) {
+	LOG(DEBUG) << "EntityController::SetEntityDirection - Setting direction, input: " << dir;
+	entityProperties[id].direction = dir;
 
+	entities[id]->SetRotation(dir);
 }
 
 vec3 EntityController::GetEntityPosition(int id) {

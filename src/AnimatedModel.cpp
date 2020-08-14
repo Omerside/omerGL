@@ -224,27 +224,28 @@ void  AnimatedModel::DrawModel(vec3 pos, uint frame, double dTime) {
 	shader->SetUniform("material.specular", vec3(1.0));
 	shader->SetUniform("material.shininess", vec3(35.0));
 
-	LOG(DEBUG) << "SETTING MODE VALUE";
 	mat4 model = translate(mat4(), pos) * glm::scale(mat4(), scale);
+	model = rotate(model, rotation, vec3(0, 1, 0));
 	shader->SetUniform("model", model);
 	LOG(DEBUG) << "Model information:  " << model;
 
 	//PrintFinalSkelTransforms();
 	//mMesh.PrintVertexWeightArray();
-	//LOG() << "Final transform for bone 2:\n" << finalTransforms[2];
+	//Matrix, angle, direction
+	//mat4 oldMatrix = finalTransforms[frame];
+	//finalTransforms[frame] = rotate(finalTransforms[frame], (GLfloat) .5, vec3(0, 0, 1));
 	shader->SetUniform("finalTransforms", finalTransforms, MAX_NUM_OF_BONES);
-
-
-
+	
 
 	LOG() << "5) Calculating transformation";
-	
+
 	LOG() << "5) Drawing mesh.";
 	mMesh.bindTextures();
 	mMesh.draw();
 	mMesh.unbindTextures();
 	LOG() << "Finished drawing mesh.";
 	
+	//finalTransforms[frame] = oldMatrix;
 }
 
 /*Requires that mBones is populated for all meshes*/

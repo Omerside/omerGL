@@ -43,6 +43,7 @@ private:
 	double deltaTime;
 	void DrawOutlinedEntity(int* entityID);
 	void DrawEntity(int* entityID);
+	void DrawEntity(int* entityID, vec3 direction);
 
 	void SetEntityPosition(int id, vec3 pos);
 	void SetEntityDirection(int id, vec3 dir);
