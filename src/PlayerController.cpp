@@ -253,7 +253,7 @@ void PlayerController::CalcEntityAction(KeyAction d, int action, vector<EntityAc
 	vec3 movement;
 	if (playerCharacterModelID != -1) {
 		movement = (*cameraTargetPos - *cameraPos);
-		movement = normalize(vec3(movement.x, movement.y, movement.z));
+		movement = normalize(vec3(movement.x, 0, movement.z));
 		actionQueue.push_back(new EntityAction(ENTITY_UPDATE_DIR, playerCharacterModelID, 0.0f, movement));
 		LOG(DEBUG) << "PlayerController::CalcEntityAction - Setting direction to " << movement;
 	}

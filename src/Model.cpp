@@ -134,6 +134,7 @@ bool Model::LoadObjMesh(std::string file) {
 void  Model::Draw(vec3 pos){
 
 	mat4 model = translate(mat4(), pos) * glm::scale(mat4(), scale);
+	model = rotate(model, rotation, vec3(0, 1, 0));
 
 	shader->SetUniform("model", model);
 	shader->SetUniform("material.ambient", textures.first.ambient);
@@ -178,10 +179,7 @@ void  Model::DrawOutline(vec3 pos) {
 	//Set model scale
 	mat4 model = translate(mat4(), vec3(pos.x, pos.y-(outlineSize.y-scale.y)*2, pos.z)) * glm::scale(mat4(), outlineSize);
 
-	//Set model rotation
-	model = rotate(model, rotation, vec3(0, 1, 0));
-
-	shader->SetUniform("model", rotate(model, rotation, vec3(0, 1, 0)));
+	shader->SetUniform("model", rotate(model, this->rotation, vec3(0, 1, 0)));
 
 	mMesh.draw();
 	shader->SetUniform("isSolidColor", 0.0f);
@@ -195,10 +193,6 @@ void  Model::DrawOutlineHidden(vec3 pos) {
 
 	//Set model scale
 	mat4 model = translate(mat4(), vec3(pos.x, pos.y - (outlineSize.y - scale.y) * 2, pos.z)) * glm::scale(mat4(), outlineSize);
-	
-	//Set model rotation
-	model = rotate(model, rotation, vec3(0, 1, 0));
-
 	
 	shader->SetUniform("model", rotate(model, rotation, vec3(0, 1, 0)));
 
@@ -600,18 +594,55 @@ void Model::DisableOutline() {
 
 void Model::SetRotation(float rotationIn) {
 	rotation = rotationIn;
-	LOG(INFO) << "Model::SetRotation - rotation set to " << rotation;
+	//LOG(INFO) << "Model::SetRotation - rotation set to " << rotation;
 
 }
 
-
+/*
 void Model::SetRotation(vec3 rotationIn) {
 	float angle;
-	LOG(INFO) << "Model::SetRotation - X Z VALUES " << rotationIn.x << " " << rotationIn.z;
-	if (rotationIn.z < 0) {
-		angle = -(((atan(rotationIn.x/abs(rotationIn.z)) + 3.6) * M_PI) / 3.60);
+	LOG(DEBUG) << "Model::SetRotation - X Z VALUES " << rotationIn.x << " " << rotationIn.z;
+	if (rotationIn.z < 0.0 && rotationIn.x < 0.0) {
+		angle = M_PI-((atan(rotationIn.x / -rotationIn.z)*M_PI) / 3.6);
+		
+	} else if (rotationIn.z < 0.0) {
+		angle = (M_PI/2.0)+(((atan(-rotationIn.z / (rotationIn.x))) * M_PI) / 3.60);
+		
 	} else {
 		angle = (atan(rotationIn.x / rotationIn.z)*M_PI) / 3.6;
 	}
+
+	SetRotation(angle);
+}*/
+
+void Model::SetRotation(vec3 rotationIn) {
+	float angle;
+	LOG(DEBUG) << "Model::SetRotation - X Z VALUES " << rotationIn.x << " " << rotationIn.z;
+
+	if (rotationIn.z < 0.0000 && rotationIn.x > 0.0000) { // negative Z value
+		angle = M_PI + ((atan(rotationIn.x / rotationIn.z)*M_PI) / 3.60000);
+
+	}
+	else if (rotationIn.z < 0.0000) { // Both are negative
+		angle = M_PI + (((atan(-rotationIn.x / (-rotationIn.z))) * M_PI) / 3.60000);
+
+	}
+	else if (rotationIn.x < 0.0000) { // X is negative
+		angle = 2*M_PI + (((atan(rotationIn.x / (rotationIn.z))) *  M_PI) / 3.60000);
+
+	}
+	else if (rotationIn.x == 0.0 || rotationIn.z == 0.0) { // 
+		if (rotationIn.x == 0.0) {
+			angle = (atan(0.0001 / rotationIn.z)* M_PI) / 3.600000;
+		}
+		else {
+			angle = (atan(rotationIn.x / 0.0001)* M_PI) / 3.600000;
+		}
+		
+	}
+	else {
+		angle = (atan(rotationIn.x / rotationIn.z)* M_PI) / 3.600000;
+	}
+
 	SetRotation(angle);
 }

@@ -227,7 +227,7 @@ void  AnimatedModel::DrawModel(vec3 pos, uint frame, double dTime) {
 	mat4 model = translate(mat4(), pos) * glm::scale(mat4(), scale);
 	model = rotate(model, rotation, vec3(0, 1, 0));
 	shader->SetUniform("model", model);
-	LOG(DEBUG) << "Model information:  " << model;
+
 
 	//PrintFinalSkelTransforms();
 	//mMesh.PrintVertexWeightArray();

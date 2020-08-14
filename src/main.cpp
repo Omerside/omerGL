@@ -49,16 +49,19 @@ int main() {
 
 	//Define some objects
 	rootCtrl->LoadEntity("floor.dae", ENTITY_STATIC, "tile_floor.jpg", vec3(4, 1, 4), vec3(1));
-	rootCtrl->LoadEntity("char_running_v2.dae", ENTITY_DYNAMIC, "Character Texture.png", vec3(1, 1, 1), vec3(5, 0, 1), true, "Armature.001");
-	rootCtrl->LoadEntity("char_running_v2.dae", ENTITY_DYNAMIC, "Character Texture.png", vec3(1, 1, 1), vec3(1, 0, 5), true, "Armature.001", true);
+	//rootCtrl->LoadEntity("char_running_v2.dae", ENTITY_DYNAMIC, "Character Texture.png", vec3(1, 1, 1), vec3(5, 0, 1), true, "Armature.001");
+	//rootCtrl->LoadEntity("char_running_v2.dae", ENTITY_DYNAMIC, "Character Texture.png", vec3(1, 1, 1), vec3(1, 0, 5), true, "Armature.001", true);
 	rootCtrl->LoadEntity("char_running_v2.dae", ENTITY_PLAYER_AVATAR, "Character Texture.png", vec3(1, 1, 1), vec3(5, 0, 5), true, "Armature.001", true);
 
 
 	//Define some lights
 	rootCtrl->LoadLight(LIGHT_DIRECTIONAL, vec3(0.0f, 0.0f, 0.0f), vec3(2.0f, 2.0f, 2.0f), vec3(1.6f), vec3(0.0f, 0.0f, 0.0f), vec3(0, -1, 0));
-	rootCtrl->LoadLight(LIGHT_POINT, vec3(10), vec3(20.0f), vec3(10.0f));
-	rootCtrl->LoadLight(LIGHT_SPOT, vec3(10), vec3(20.0f), vec3(10.0f), vec3(-10, 5, -10), vec3(0, -1, 0));
-	rootCtrl->LoadLight(LIGHT_SPOT, vec3(10, 10, 10), vec3(20.0f, 0, 20), vec3(10.0f, 0, 10), vec3(10, 5, 10), vec3(0, -1, 0));
+	//rootCtrl->LoadLight(LIGHT_POINT, vec3(10), vec3(20.0f), vec3(10.0f));
+	//rootCtrl->LoadLight(LIGHT_SPOT, vec3(), vec3(20.0f), vec3(10.0f), vec3(-10, 5, -10), vec3(0, -1, 0));
+	rootCtrl->LoadLight(LIGHT_SPOT, vec3(10, 10, 10), vec3(20.0f, 0, 20), vec3(10, 10, 10), vec3(10, 10, 10), vec3(0, -1, 0));
+	rootCtrl->LoadLight(LIGHT_SPOT, vec3(10, 10, -10), vec3(20.0f, 0, 20), vec3(10, 10, -10), vec3(10, 10, -10), vec3(0, -1, 0));
+	rootCtrl->LoadLight(LIGHT_SPOT, vec3(-10, 10, -10), vec3(20.0f, 0, 20), vec3(-10, 10, -10), vec3(-10, 10, -10), vec3(0, -1, 0));
+	rootCtrl->LoadLight(LIGHT_SPOT, vec3(-10, 10, 10), vec3(20.0f, 0, 20), vec3(-10, 10, 10), vec3(-10, 10, 10), vec3(0, -1, 0));
 	rootCtrl->LoadLight(LIGHT_PLAYER_FLASHLIGHT, vec3(10, 10, 10), vec3(20.0f, 20, 20), vec3(10.0f, 0, 10), vec3(10, 5, 10), vec3(0, -1, 0));
 
 
