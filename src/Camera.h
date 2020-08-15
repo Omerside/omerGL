@@ -22,6 +22,7 @@ public:
 
 	vec3 getPosition() const;
 	vec3 getTarget();
+	vec3 getUp() { return mUp; };
 	vec2 getYawPitch() {
 		return vec2(mYaw, mPitch);
 	};

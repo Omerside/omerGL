@@ -577,7 +577,7 @@ void Model::EnableOutline(vec3 colorInput, vec3 scaleInput, vec3 outlineColorHid
 	outlineSize = scale * scaleInput;
 	outlineColor = colorInput;
 	outlineColorHidden = outlineColorHiddenInput;
-	hasOutline = true;
+	hasOutline = true; 
 }
 
 void Model::EnableOutline() {
@@ -594,54 +594,38 @@ void Model::DisableOutline() {
 
 void Model::SetRotation(float rotationIn) {
 	rotation = rotationIn;
-	//LOG(INFO) << "Model::SetRotation - rotation set to " << rotation;
+	LOG(DEBUG) << "Model::SetRotation - rotation set to " << rotation;
 
 }
 
-/*
-void Model::SetRotation(vec3 rotationIn) {
-	float angle;
-	LOG(DEBUG) << "Model::SetRotation - X Z VALUES " << rotationIn.x << " " << rotationIn.z;
-	if (rotationIn.z < 0.0 && rotationIn.x < 0.0) {
-		angle = M_PI-((atan(rotationIn.x / -rotationIn.z)*M_PI) / 3.6);
-		
-	} else if (rotationIn.z < 0.0) {
-		angle = (M_PI/2.0)+(((atan(-rotationIn.z / (rotationIn.x))) * M_PI) / 3.60);
-		
-	} else {
-		angle = (atan(rotationIn.x / rotationIn.z)*M_PI) / 3.6;
-	}
-
-	SetRotation(angle);
-}*/
-
+//Takes in a vector and rotates along the X-Z axis (left and right rotation only)
 void Model::SetRotation(vec3 rotationIn) {
 	float angle;
 	LOG(DEBUG) << "Model::SetRotation - X Z VALUES " << rotationIn.x << " " << rotationIn.z;
 
-	if (rotationIn.z < 0.0000 && rotationIn.x > 0.0000) { // negative Z value
-		angle = M_PI + ((atan(rotationIn.x / rotationIn.z)*M_PI) / 3.60000);
+	if (rotationIn.z < 0.0 && rotationIn.x > 0.0) { // negative Z value
+		angle = M_PI + ((atan(rotationIn.x / rotationIn.z)*M_PI) / 3.6);
 
 	}
-	else if (rotationIn.z < 0.0000) { // Both are negative
-		angle = M_PI + (((atan(-rotationIn.x / (-rotationIn.z))) * M_PI) / 3.60000);
+	else if (rotationIn.z < 0.0) { // Both are negative
+		angle = M_PI + (((atan(-rotationIn.x / (-rotationIn.z))) * M_PI) / 3.6);
 
 	}
-	else if (rotationIn.x < 0.0000) { // X is negative
-		angle = 2*M_PI + (((atan(rotationIn.x / (rotationIn.z))) *  M_PI) / 3.60000);
+	else if (rotationIn.x < 0.0) { // X is negative
+		angle = 2*M_PI + (((atan(rotationIn.x / (rotationIn.z))) *  M_PI) / 3.6);
 
 	}
-	else if (rotationIn.x == 0.0 || rotationIn.z == 0.0) { // 
+	else if (rotationIn.x == 0.0 || rotationIn.z == 0.0) { // X or Z are zero
 		if (rotationIn.x == 0.0) {
-			angle = (atan(0.0001 / rotationIn.z)* M_PI) / 3.600000;
+			angle = (atan(0.0001 / rotationIn.z)* M_PI) / 3.6;
 		}
 		else {
-			angle = (atan(rotationIn.x / 0.0001)* M_PI) / 3.600000;
+			angle = (atan(rotationIn.x / 0.0001)* M_PI) / 3.6;
 		}
 		
 	}
-	else {
-		angle = (atan(rotationIn.x / rotationIn.z)* M_PI) / 3.600000;
+	else { // both are positive
+		angle = (atan(rotationIn.x / rotationIn.z)* M_PI) / 3.6;
 	}
 
 	SetRotation(angle);

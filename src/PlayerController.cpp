@@ -28,6 +28,7 @@ void PlayerController::InitPlayerCamera(){
 	}
 
 	playerCamera->setMoveSpeed(0.25f);
+	cameraUp = orbitCamera->getUp();
 	//playerCamera->setCameraPositionVectors(vec3(0.35f, 4.6f, 10.0f));
 	SetLook(vec3(0.1));
 
@@ -50,6 +51,7 @@ void PlayerController::InitOrbitCamera() {
 	SetLook(vec3(0.1));
 	orbitCamera->setCameraPositionVectors(vec3(0.35f, 4.6f, 10.0f));
 	SetCameraTargetPos(new vec3(0));
+	cameraUp = orbitCamera->getUp();
 	LOG(DEBUG) << "PlayerController::InitOrbitCamera - DONE INITIALIZING OrbitCamera";
 
 	
@@ -250,31 +252,52 @@ void PlayerController::GetEntityPersistentAction(vector<EntityAction*> &actionQu
 }
 
 void PlayerController::CalcEntityAction(KeyAction d, int action, vector<EntityAction*> &actionQueue) {
-	vec3 movement;
+	vec3 direction = (*cameraTargetPos - *cameraPos); 
+	vec3 cameraRight;
+
 	if (playerCharacterModelID != -1) {
-		movement = (*cameraTargetPos - *cameraPos);
-		movement = normalize(vec3(movement.x, 0, movement.z));
-		actionQueue.push_back(new EntityAction(ENTITY_UPDATE_DIR, playerCharacterModelID, 0.0f, movement));
-		LOG(DEBUG) << "PlayerController::CalcEntityAction - Setting direction to " << movement;
+		direction = normalize(vec3(direction.x, 0, direction.z));
+		actionQueue.push_back(new EntityAction(ENTITY_UPDATE_DIR, playerCharacterModelID, 0.0f, direction));
+		LOG(DEBUG) << "PlayerController::CalcEntityAction - Setting direction to " << direction;
 	}
 
 	if (action == GLFW_PRESS) {
 		
 		switch (d.playerActionOnPress) {
 
-		case PLAYER_MOVE_LEFT:
+		
 		case PLAYER_MOVE_RIGHT:
+			cameraRight = normalize(cross(cameraUp, direction))*moveSpeed;
+			actionQueue.push_back(new EntityAction(ENTITY_UPDATE_POS, playerCharacterModelID, 0.0f, vec3(-cameraRight.x, 0, -cameraRight.z)));
+			dynamicEntityActionsQueue.push_back(new EntityActionDynamic(ENTITY_UPDATE_POS, playerCharacterModelID, nullptr, new vec3(-cameraRight.x, 0, -cameraRight.z)));
+			break;
+
+		case PLAYER_MOVE_LEFT:
+			cameraRight = normalize(cross(cameraUp, direction))*moveSpeed;
+			actionQueue.push_back(new EntityAction(ENTITY_UPDATE_POS, playerCharacterModelID, 0.0f, vec3(cameraRight.x, 0, cameraRight.z)));
+			dynamicEntityActionsQueue.push_back(new EntityActionDynamic(ENTITY_UPDATE_POS, playerCharacterModelID, nullptr, new vec3(cameraRight.x, 0, cameraRight.z)));
+			break;
+
 		case PLAYER_MOVE_UP:
+			actionQueue.push_back(new EntityAction(ENTITY_UPDATE_POS, playerCharacterModelID, 0.0f, cameraUp * moveSpeed));
+			dynamicEntityActionsQueue.push_back(new EntityActionDynamic(ENTITY_UPDATE_POS, playerCharacterModelID, nullptr, &cameraUp));
+			break;
+
 		case PLAYER_MOVE_DOWN:
+			actionQueue.push_back(new EntityAction(ENTITY_UPDATE_POS, playerCharacterModelID, 0.0f, -cameraUp * moveSpeed));
+			dynamicEntityActionsQueue.push_back(new EntityActionDynamic(ENTITY_UPDATE_POS, playerCharacterModelID, nullptr, &(-cameraUp * moveSpeed)));
+			break;
+
 		case PLAYER_MOVE_FORWARD:
-			movement = (*cameraTargetPos - *cameraPos);
-			movement = normalize(vec3(movement.x, 0, movement.z))*moveSpeed;
-			actionQueue.push_back(new EntityAction(ENTITY_UPDATE_POS, playerCharacterModelID, 0.0f, vec3(movement.x, 0, movement.z)));
-			dynamicEntityActionsQueue.push_back(new EntityActionDynamic(ENTITY_UPDATE_POS, playerCharacterModelID, nullptr, new vec3(movement.x, 0, movement.z)));
+			direction = normalize(vec3(direction.x, 0, direction.z))*moveSpeed;
+			actionQueue.push_back(new EntityAction(ENTITY_UPDATE_POS, playerCharacterModelID, 0.0f, vec3(direction.x, 0, direction.z)));
+			dynamicEntityActionsQueue.push_back(new EntityActionDynamic(ENTITY_UPDATE_POS, playerCharacterModelID, nullptr, new vec3(direction.x, 0, direction.z)));
+			break;
 
 		case PLAYER_MOVE_BACK:
-			
-
+			direction = normalize(vec3(direction.x, 0, direction.z))*moveSpeed;
+			actionQueue.push_back(new EntityAction(ENTITY_UPDATE_POS, playerCharacterModelID, 0.0f, vec3(-direction.x, 0, -direction.z)));
+			dynamicEntityActionsQueue.push_back(new EntityActionDynamic(ENTITY_UPDATE_POS, playerCharacterModelID, nullptr, new vec3(-direction.x, 0, -direction.z)));
 			break;
 
 		case PLAYER_MOVE_MOUSE:

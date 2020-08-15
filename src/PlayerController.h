@@ -45,6 +45,8 @@ private:
 	vec3* cameraTargetPos;
 	vec3* lookAt;
 	mat4* viewMat;
+
+	vec3 cameraUp;
 	float moveSpeed = 0.2f;
 	
 	//Set a flashlight which follows the camera and points at what the player is targeting
